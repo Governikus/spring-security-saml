@@ -35,7 +35,7 @@ spring:
           - urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress
           - urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified
 
-        keys:
+        signing-keys:
           active:
             name: active-idp-key
             private-key: |
@@ -114,43 +114,45 @@ spring:
                 LcAPZJqxC5K1c2sO5/iEg3Yy9owUex+MY752MPJIoZQrp1jV2L5Sjz6+vBNPqROR
                 GSmwzTz4iOglRkEDPs6Xo0uDH/Hc5eidjQ==
                 -----END CERTIFICATE-----
-            - name: key3
-              private-key: |
-                -----BEGIN RSA PRIVATE KEY-----
-                Proc-Type: 4,ENCRYPTED
-                DEK-Info: DES-EDE3-CBC,33F65E5A2BDF04E8
+        encryption-keys:
+          active:
+            name: key3
+            private-key: |
+              -----BEGIN RSA PRIVATE KEY-----
+              Proc-Type: 4,ENCRYPTED
+              DEK-Info: DES-EDE3-CBC,33F65E5A2BDF04E8
 
-                ltGc7n1Zau5mA+jkcBnI0i/ibFCs4f+ztzTIL5JeTZGWYlkhL3Holj8e5Ytl4TbT
-                tRHh8cwjqAP49hIYApxFB+mdtFJmUHd3xUiJnPgSSr0LXM+3bgo++luf/yjpETTt
-                lksIDXttK5hQuYYfiWoZiJFSEC1w4glyM/kqRmFs0coQuTzatgheycm8NNVVndNn
-                uVRB4f0aw5XhjwdostnrPoWJxFVJMVn0lZVJH4aoJ+tTd/goiEAgcen8uXVoJ09A
-                rKELPM+AQp5scFce3zEpNFvkqSPzKGJ8gKyEmlyvvE7U6XKgjphit8qLenh0TswZ
-                zrjFK2jB5KZerL0fjDtPJdknUXdfKFBeDvuRSv11QVkqfmWNxWqkTBsylufJOsXA
-                15HQC2u0BVpkgYfgHMjj44M5e3bJjfVDxdGxAtC7PvySQsFZQGDExb89J/mMuTSE
-                3bB41t67oD8vOHf0LofOxbW1UsQAXsOrFbeBpKPpDim4OcBvrwPUMsaoNXxWOvBu
-                t+w1/l9TdYl3qnQKLPWCUmTftCDY5WIiht5j4ZULNo46ZdglfJKtsMI0bYW60RYZ
-                ba59q7SZTfFTjVQ4CcMJDJLpVVnGkM7vXNK8vj5El+u4q5ZDhlSFxUSHLblB9VuK
-                P2XvnTjLm0lDVhSjhlVM7suACuAN+8oaH1uCrJCNWTw104wmbcUEac5lq9N4UBOp
-                6XFYxcItzzItm9STkmrGjrFNluwZ2qKCFb9CwtupDJgIaALGN2Az+4psdEVETgFv
-                ie94rpSlZ2n7XBCIMxOVkrqLebAJgCY+zdF/3EZtrcGzVqSgwPRNFQ==
-                -----END RSA PRIVATE KEY-----
-              passphrase: idppassword
-              certificate: |
-                -----BEGIN CERTIFICATE-----
-                MIIChTCCAe4CCQDvIphE/c3STzANBgkqhkiG9w0BAQsFADCBhjELMAkGA1UEBhMC
-                VVMxEzARBgNVBAgMCldhc2hpbmd0b24xEjAQBgNVBAcMCVZhbmNvdXZlcjEdMBsG
-                A1UECgwUU3ByaW5nIFNlY3VyaXR5IFNBTUwxDDAKBgNVBAsMA2lkcDEhMB8GA1UE
-                AwwYaWRwLnNwcmluZy5zZWN1cml0eS5zYW1sMB4XDTE4MDUxNDE1MTkxOFoXDTI4
-                MDUxMTE1MTkxOFowgYYxCzAJBgNVBAYTAlVTMRMwEQYDVQQIDApXYXNoaW5ndG9u
-                MRIwEAYDVQQHDAlWYW5jb3V2ZXIxHTAbBgNVBAoMFFNwcmluZyBTZWN1cml0eSBT
-                QU1MMQwwCgYDVQQLDANpZHAxITAfBgNVBAMMGGlkcC5zcHJpbmcuc2VjdXJpdHku
-                c2FtbDCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAqtDYYGiAxDhYBLr2nTxg
-                PpETurWIQd/hJDRXUK42YhoNMs8jXxcCNmrSagvdaD/hwn/EU7j5E20GZdZLa85a
-                dkN0gHN6e+nu+hHw3K9dlZgla9+DfRLADh6WHD8T/DO9sRWcpdLnNZI6p7t5mld0
-                Q0/hhQ8wW6TQDPhdXWhRGEkCAwEAATANBgkqhkiG9w0BAQsFAAOBgQAtLuQjIPKF
-                ystOYNeUGngR4mk5GgYizzR3OvgDxZGNizVCbilPoM4P3T5izpd8f/dGIioq4nzr
-                PM//DZj/ijS9WNzrLV06T7iYpYeTKveR8TYaBaJoovrlfPaCadI7L7WatrlQaMZ2
-                HffnsgNZROW70P9KbBF/4ejcVX96drpXiA==
+              ltGc7n1Zau5mA+jkcBnI0i/ibFCs4f+ztzTIL5JeTZGWYlkhL3Holj8e5Ytl4TbT
+              tRHh8cwjqAP49hIYApxFB+mdtFJmUHd3xUiJnPgSSr0LXM+3bgo++luf/yjpETTt
+              lksIDXttK5hQuYYfiWoZiJFSEC1w4glyM/kqRmFs0coQuTzatgheycm8NNVVndNn
+              uVRB4f0aw5XhjwdostnrPoWJxFVJMVn0lZVJH4aoJ+tTd/goiEAgcen8uXVoJ09A
+              rKELPM+AQp5scFce3zEpNFvkqSPzKGJ8gKyEmlyvvE7U6XKgjphit8qLenh0TswZ
+              zrjFK2jB5KZerL0fjDtPJdknUXdfKFBeDvuRSv11QVkqfmWNxWqkTBsylufJOsXA
+              15HQC2u0BVpkgYfgHMjj44M5e3bJjfVDxdGxAtC7PvySQsFZQGDExb89J/mMuTSE
+              3bB41t67oD8vOHf0LofOxbW1UsQAXsOrFbeBpKPpDim4OcBvrwPUMsaoNXxWOvBu
+              t+w1/l9TdYl3qnQKLPWCUmTftCDY5WIiht5j4ZULNo46ZdglfJKtsMI0bYW60RYZ
+              ba59q7SZTfFTjVQ4CcMJDJLpVVnGkM7vXNK8vj5El+u4q5ZDhlSFxUSHLblB9VuK
+              P2XvnTjLm0lDVhSjhlVM7suACuAN+8oaH1uCrJCNWTw104wmbcUEac5lq9N4UBOp
+              6XFYxcItzzItm9STkmrGjrFNluwZ2qKCFb9CwtupDJgIaALGN2Az+4psdEVETgFv
+              ie94rpSlZ2n7XBCIMxOVkrqLebAJgCY+zdF/3EZtrcGzVqSgwPRNFQ==
+              -----END RSA PRIVATE KEY-----
+            passphrase: idppassword
+            certificate: |
+              -----BEGIN CERTIFICATE-----
+              MIIChTCCAe4CCQDvIphE/c3STzANBgkqhkiG9w0BAQsFADCBhjELMAkGA1UEBhMC
+              VVMxEzARBgNVBAgMCldhc2hpbmd0b24xEjAQBgNVBAcMCVZhbmNvdXZlcjEdMBsG
+              A1UECgwUU3ByaW5nIFNlY3VyaXR5IFNBTUwxDDAKBgNVBAsMA2lkcDEhMB8GA1UE
+              AwwYaWRwLnNwcmluZy5zZWN1cml0eS5zYW1sMB4XDTE4MDUxNDE1MTkxOFoXDTI4
+              MDUxMTE1MTkxOFowgYYxCzAJBgNVBAYTAlVTMRMwEQYDVQQIDApXYXNoaW5ndG9u
+              MRIwEAYDVQQHDAlWYW5jb3V2ZXIxHTAbBgNVBAoMFFNwcmluZyBTZWN1cml0eSBT
+              QU1MMQwwCgYDVQQLDANpZHAxITAfBgNVBAMMGGlkcC5zcHJpbmcuc2VjdXJpdHku
+              c2FtbDCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAqtDYYGiAxDhYBLr2nTxg
+              PpETurWIQd/hJDRXUK42YhoNMs8jXxcCNmrSagvdaD/hwn/EU7j5E20GZdZLa85a
+              dkN0gHN6e+nu+hHw3K9dlZgla9+DfRLADh6WHD8T/DO9sRWcpdLnNZI6p7t5mld0
+              Q0/hhQ8wW6TQDPhdXWhRGEkCAwEAATANBgkqhkiG9w0BAQsFAAOBgQAtLuQjIPKF
+              ystOYNeUGngR4mk5GgYizzR3OvgDxZGNizVCbilPoM4P3T5izpd8f/dGIioq4nzr
+              PM//DZj/ijS9WNzrLV06T7iYpYeTKveR8TYaBaJoovrlfPaCadI7L7WatrlQaMZ2
+              HffnsgNZROW70P9KbBF/4ejcVX96drpXiA==
         providers:
         - alias: uaa
           metadata: http://localhost:8082/uaa/saml/metadata

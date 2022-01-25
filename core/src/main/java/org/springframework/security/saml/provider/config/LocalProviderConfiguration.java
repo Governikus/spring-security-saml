@@ -1,189 +1,269 @@
 /*
  * Copyright 2002-2018 the original author or authors.
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *     https://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
+ * https://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.springframework.security.saml.provider.config;
+
+import static org.springframework.util.StringUtils.hasText;
 
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.security.saml.saml2.encrypt.DataEncryptionMethod;
+import org.springframework.security.saml.saml2.encrypt.KeyEncryptionMethod;
 import org.springframework.security.saml.saml2.metadata.NameId;
 import org.springframework.security.saml.saml2.signature.AlgorithmMethod;
 import org.springframework.security.saml.saml2.signature.DigestMethod;
 
-import static org.springframework.util.StringUtils.hasText;
 
-public class LocalProviderConfiguration<
-	LocalConfiguration extends LocalProviderConfiguration,
-	ExternalConfiguration extends ExternalProviderConfiguration<ExternalConfiguration>> implements Cloneable {
+public class LocalProviderConfiguration<L extends LocalProviderConfiguration<L, E>, E extends ExternalProviderConfiguration<E>>
+  implements Cloneable
+{
 
-	private String entityId;
-	private String alias;
-	private boolean signMetadata;
-	private String metadata;
-	private RotatingKeys keys;
-	private String prefix;
-	private boolean singleLogoutEnabled = true;
-	private List<NameId> nameIds = new LinkedList<>();
-	private AlgorithmMethod defaultSigningAlgorithm = AlgorithmMethod.RSA_SHA256;
-	private DigestMethod defaultDigest = DigestMethod.SHA256;
-	private List<ExternalConfiguration> providers = new LinkedList<>();
-	private String basePath;
+  private String entityId;
 
+  private String alias;
 
-	public LocalProviderConfiguration(String prefix) {
-		setPrefix(prefix);
-	}
+  private boolean signMetadata;
 
-	protected String cleanPrefix(String prefix) {
-		if (hasText(prefix) && prefix.startsWith("/")) {
-			prefix = prefix.substring(1);
-		}
-		if (hasText(prefix) && !prefix.endsWith("/")) {
-			prefix = prefix + "/";
-		}
-		return prefix;
-	}
+  private String metadata;
 
-	@SuppressWarnings("checked")
-	protected LocalConfiguration _this() {
-		return (LocalConfiguration) this;
-	}
+  private RotatingSigningKeys signingKeys;
 
-	public String getEntityId() {
-		return entityId;
-	}
+  private RotatingEncryptionKeys encryptionKeys;
 
-	public LocalConfiguration setEntityId(String entityId) {
-		this.entityId = entityId;
-		return _this();
-	}
+  private String prefix;
 
-	public boolean isSignMetadata() {
-		return signMetadata;
-	}
+  private boolean singleLogoutEnabled = true;
 
-	public LocalConfiguration setSignMetadata(boolean signMetadata) {
-		this.signMetadata = signMetadata;
-		return _this();
-	}
+  private List<NameId> nameIds = new LinkedList<>();
 
-	public String getMetadata() {
-		return metadata;
-	}
+  private AlgorithmMethod defaultSigningAlgorithm = AlgorithmMethod.RSA_SHA256;
 
-	public LocalConfiguration setMetadata(String metadata) {
-		this.metadata = metadata;
-		return _this();
-	}
+  private DigestMethod defaultDigest = DigestMethod.SHA256;
 
-	public RotatingKeys getKeys() {
-		return keys;
-	}
+  private List<E> providers = new LinkedList<>();
 
-	public LocalConfiguration setKeys(RotatingKeys keys) {
-		this.keys = keys;
-		return _this();
-	}
+  private String basePath;
 
-	public String getAlias() {
-		return alias;
-	}
+  private KeyEncryptionMethod keyEncryptionAlgorithm = KeyEncryptionMethod.RSA_1_5;
 
-	public LocalConfiguration setAlias(String alias) {
-		this.alias = alias;
-		return _this();
-	}
+  private DataEncryptionMethod dataEncryptionAlgorithm = DataEncryptionMethod.AES256_CBC;
 
-	public String getPrefix() {
-		return prefix;
-	}
+  public LocalProviderConfiguration(String prefix)
+  {
+    setPrefix(prefix);
+  }
 
-	public LocalConfiguration setPrefix(String prefix) {
-		prefix = cleanPrefix(prefix);
-		this.prefix = prefix;
+  protected String cleanPrefix(String prefix)
+  {
+    if (hasText(prefix) && prefix.startsWith("/"))
+    {
+      prefix = prefix.substring(1);
+    }
+    if (hasText(prefix) && !prefix.endsWith("/"))
+    {
+      prefix = prefix + "/";
+    }
+    return prefix;
+  }
 
-		return _this();
-	}
+  @SuppressWarnings("unchecked")
+  protected L _this()
+  {
+    return (L)this;
+  }
 
-	public boolean isSingleLogoutEnabled() {
-		return singleLogoutEnabled;
-	}
+  public String getEntityId()
+  {
+    return entityId;
+  }
 
-	public LocalConfiguration setSingleLogoutEnabled(boolean singleLogoutEnabled) {
-		this.singleLogoutEnabled = singleLogoutEnabled;
-		return _this();
-	}
+  public L setEntityId(String entityId)
+  {
+    this.entityId = entityId;
+    return _this();
+  }
 
-	public List<NameId> getNameIds() {
-		return nameIds;
-	}
+  public boolean isSignMetadata()
+  {
+    return signMetadata;
+  }
 
-	public LocalConfiguration setNameIds(List<Object> nameIds) {
-		this.nameIds = nameIds.stream().map(
-			n -> n instanceof String ? NameId.fromUrn((String)n) : (NameId)n).collect(Collectors.toList()
-		);
-		return _this();
-	}
+  public L setSignMetadata(boolean signMetadata)
+  {
+    this.signMetadata = signMetadata;
+    return _this();
+  }
 
-	public AlgorithmMethod getDefaultSigningAlgorithm() {
-		return defaultSigningAlgorithm;
-	}
+  public String getMetadata()
+  {
+    return metadata;
+  }
 
-	public LocalConfiguration setDefaultSigningAlgorithm(AlgorithmMethod defaultSigningAlgorithm) {
-		this.defaultSigningAlgorithm = defaultSigningAlgorithm;
-		return _this();
-	}
+  public L setMetadata(String metadata)
+  {
+    this.metadata = metadata;
+    return _this();
+  }
 
-	public DigestMethod getDefaultDigest() {
-		return defaultDigest;
-	}
+  public RotatingSigningKeys getSigningKeys()
+  {
+    return signingKeys;
+  }
 
-	public LocalConfiguration setDefaultDigest(DigestMethod defaultDigest) {
-		this.defaultDigest = defaultDigest;
-		return _this();
-	}
+  public L setSigningKeys(RotatingSigningKeys signingKeys)
+  {
+    this.signingKeys = signingKeys;
+    return _this();
+  }
 
-	public String getBasePath() {
-		return basePath;
-	}
+  public RotatingEncryptionKeys getEncryptionKeys()
+  {
+    return encryptionKeys;
+  }
 
-	public LocalProviderConfiguration<LocalConfiguration, ExternalConfiguration> setBasePath(String basePath) {
-		this.basePath = basePath;
-		return this;
-	}
+  public L setEncryptionKeys(RotatingEncryptionKeys encryptionKeys)
+  {
+    this.encryptionKeys = encryptionKeys;
+    return _this();
+  }
 
-	@Override
-	public LocalConfiguration clone() throws CloneNotSupportedException {
-		LocalConfiguration result = (LocalConfiguration) super.clone();
-		LinkedList<ExternalConfiguration> newProviders = new LinkedList<>();
-		for (ExternalConfiguration externalConfiguration : getProviders()) {
-			newProviders.add(externalConfiguration.clone());
-		}
-		result.setProviders(newProviders);
-		return result;
-	}
+  public String getAlias()
+  {
+    return alias;
+  }
 
-	public List<ExternalConfiguration> getProviders() {
-		return providers;
-	}
+  public L setAlias(String alias)
+  {
+    this.alias = alias;
+    return _this();
+  }
 
-	public LocalConfiguration setProviders(List<ExternalConfiguration> providers) {
-		this.providers = providers;
-		return _this();
-	}
+  public String getPrefix()
+  {
+    return prefix;
+  }
+
+  public L setPrefix(String prefix)
+  {
+    prefix = cleanPrefix(prefix);
+    this.prefix = prefix;
+
+    return _this();
+  }
+
+  public boolean isSingleLogoutEnabled()
+  {
+    return singleLogoutEnabled;
+  }
+
+  public L setSingleLogoutEnabled(boolean singleLogoutEnabled)
+  {
+    this.singleLogoutEnabled = singleLogoutEnabled;
+    return _this();
+  }
+
+  public List<NameId> getNameIds()
+  {
+    return nameIds;
+  }
+
+  public L setNameIds(List<Object> nameIds)
+  {
+    this.nameIds = nameIds.stream()
+                          .map(n -> n instanceof String ? NameId.fromUrn((String)n) : (NameId)n)
+                          .collect(Collectors.toList());
+    return _this();
+  }
+
+  public AlgorithmMethod getDefaultSigningAlgorithm()
+  {
+    return defaultSigningAlgorithm;
+  }
+
+  public L setDefaultSigningAlgorithm(AlgorithmMethod defaultSigningAlgorithm)
+  {
+    this.defaultSigningAlgorithm = defaultSigningAlgorithm;
+    return _this();
+  }
+
+  public DigestMethod getDefaultDigest()
+  {
+    return defaultDigest;
+  }
+
+  public L setDefaultDigest(DigestMethod defaultDigest)
+  {
+    this.defaultDigest = defaultDigest;
+    return _this();
+  }
+
+  public String getBasePath()
+  {
+    return basePath;
+  }
+
+  public LocalProviderConfiguration<L, E> setBasePath(String basePath)
+  {
+    this.basePath = basePath;
+    return this;
+  }
+
+  @Override
+  public L clone() throws CloneNotSupportedException
+  {
+    @SuppressWarnings("unchecked")
+    L result = (L)super.clone();
+    LinkedList<E> newProviders = new LinkedList<>();
+    for ( E externalConfiguration : getProviders() )
+    {
+      newProviders.add(externalConfiguration.clone());
+    }
+    result.setProviders(newProviders);
+    return result;
+  }
+
+  public List<E> getProviders()
+  {
+    return providers;
+  }
+
+  public L setProviders(List<E> providers)
+  {
+    this.providers = providers;
+    return _this();
+  }
+
+  public KeyEncryptionMethod getKeyEncryptionAlgorithm()
+  {
+    return keyEncryptionAlgorithm;
+  }
+
+  public L setKeyEncryptionAlgorithm(KeyEncryptionMethod keyEncryptionAlgorithm)
+  {
+    this.keyEncryptionAlgorithm = keyEncryptionAlgorithm;
+    return _this();
+  }
+
+  public DataEncryptionMethod getDataEncryptionAlgorithm()
+  {
+    return dataEncryptionAlgorithm;
+  }
+
+  public L setDataEncryptionAlgorithm(DataEncryptionMethod dataEncryptionAlgorithm)
+  {
+    this.dataEncryptionAlgorithm = dataEncryptionAlgorithm;
+    return _this();
+  }
 }

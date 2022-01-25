@@ -16,9 +16,9 @@
  */
 
 include "core"
-include "samples/boot/simple-service-provider"
-include "samples/boot/simple-identity-provider"
-include "samples/boot/dsl-identity-provider"
+//include "samples/boot/simple-service-provider"
+//include "samples/boot/simple-identity-provider"
+//include "samples/boot/dsl-identity-provider"
 
 rootProject.name = "spring-security-saml2"
 

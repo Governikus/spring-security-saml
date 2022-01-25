@@ -189,4 +189,9 @@
         <md:AssertionIDRequestService Binding="urn:oasis:names:tc:SAML:2.0:bindings:SOAP" Location="https://login.run.pivotal.io/saml/assertion/alias/login.run.pivotal.io"/>
         <md:AssertionIDRequestService Binding="urn:oasis:names:tc:SAML:2.0:bindings:URI" Location="https://login.run.pivotal.io/saml/assertion/alias/login.run.pivotal.io"/>
     </md:AttributeAuthorityDescriptor>
+    <md:Organization>
+        <md:OrganizationName xml:lang="en">BASF SE</md:OrganizationName>
+        <md:OrganizationDisplayName xml:lang="en">BASF SE</md:OrganizationDisplayName>
+        <md:OrganizationURL xml:lang="en">https://www.basf.com</md:OrganizationURL>
+    </md:Organization>
 </md:EntityDescriptor>
