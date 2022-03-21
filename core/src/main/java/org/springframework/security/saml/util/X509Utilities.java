@@ -29,6 +29,8 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Base64;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.bouncycastle.openssl.PEMDecryptorProvider;
 import org.bouncycastle.openssl.PEMEncryptedKeyPair;
 import org.bouncycastle.openssl.PEMKeyPair;
@@ -40,6 +42,8 @@ import org.springframework.security.saml.SamlKeyException;
 
 public class X509Utilities
 {
+
+  private static final Log LOG = LogFactory.getLog(X509Utilities.class);
 
   public static final String BEGIN_CERT = "-----BEGIN CERTIFICATE-----\n";
 
@@ -60,7 +64,15 @@ public class X509Utilities
   {
     String data = keyCleanup(pem);
 
-    return Base64.getDecoder().decode(data);
+    try
+    {
+      return Base64.getDecoder().decode(data);
+    }
+    catch (IllegalArgumentException e)
+    {
+      LOG.warn("Failed to base64 decode the following pem: " + data);
+      throw e;
+    }
   }
 
   public static String keyCleanup(String pem)
@@ -69,8 +81,7 @@ public class X509Utilities
               .replace(END_CERT, "")
               .replace(BEGIN_KEY, "")
               .replace(END_KEY, "")
-              .replace("\n", "")
-              .replace("\\s","");
+              .replaceAll("\\s", "");
   }
 
   public static X509Certificate getCertificate(byte[] der) throws CertificateException

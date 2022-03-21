@@ -44,6 +44,8 @@ public class Namespace
 
   public static final String NS_REQUEST_INIT = "urn:oasis:names:tc:SAML:profiles:SSO:request-init";
 
+  public static final String NS_REQ_ATTR = "urn:oasis:names:tc:SAML:protocol:ext:req-attr";
+
   private Namespace()
   {
     throw new IllegalStateException("Utility class");

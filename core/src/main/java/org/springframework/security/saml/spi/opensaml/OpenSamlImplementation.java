@@ -469,9 +469,7 @@ public class OpenSamlImplementation extends SpringSecuritySaml<OpenSamlImplement
   }
 
   @Override
-  public Saml2Object resolve(Document document,
-                             List<SigningKey> verificationKeys,
-                             List<EncryptionKey> localKeys)
+  public Saml2Object resolve(Document document, List<SigningKey> verificationKeys, List<EncryptionKey> localKeys)
   {
     XMLObject parsed = unmarshall(document.getDocumentElement());
     return resolve(null, parsed, verificationKeys, localKeys);
@@ -945,7 +943,7 @@ public class OpenSamlImplementation extends SpringSecuritySaml<OpenSamlImplement
       return result;
     }
     UsageType type = desc.getUse() == null ? UsageType.SIGNING : desc.getUse();
-    if (UsageType.SIGNING.equals(type))
+    if (UsageType.SIGNING.equals(type) || UsageType.UNSPECIFIED.equals(type))
     {
       int index = 0;
       for ( X509Data x509 : ofNullable(desc.getKeyInfo().getX509Datas()).orElse(emptyList()) )
@@ -981,7 +979,7 @@ public class OpenSamlImplementation extends SpringSecuritySaml<OpenSamlImplement
       return result;
     }
     UsageType type = desc.getUse() == null ? UsageType.ENCRYPTION : desc.getUse();
-    if (UsageType.ENCRYPTION.equals(type))
+    if (UsageType.ENCRYPTION.equals(type) || UsageType.UNSPECIFIED.equals(type))
     {
       int index = 0;
       for ( X509Data x509 : ofNullable(desc.getKeyInfo().getX509Datas()).orElse(emptyList()) )
@@ -1596,6 +1594,17 @@ public class OpenSamlImplementation extends SpringSecuritySaml<OpenSamlImplement
     auth.setRequestedAuthnContext(getRequestedAuthenticationContext(request));
     auth.setIssuer(toIssuer(request.getIssuer()));
     auth.setScoping(getScoping(request.getScoping()));
+    if (!CollectionUtils.isEmpty(request.getExtensions()))
+    {
+      org.opensaml.saml.saml2.core.Extensions extensions = buildSAMLObject(org.opensaml.saml.saml2.core.Extensions.class);
+      extensions.getUnknownXMLObjects()
+                .addAll(request.getExtensions()
+                               .stream()
+                               .filter(XMLObject.class::isInstance)
+                               .map(XMLObject.class::cast)
+                               .collect(Collectors.toList()));
+      auth.setExtensions(extensions);
+    }
     if (request.getSigningKey() != null)
     {
       signObject(auth, request.getSigningKey(), request.getAlgorithm(), request.getDigest());
@@ -1858,11 +1867,7 @@ public class OpenSamlImplementation extends SpringSecuritySaml<OpenSamlImplement
     List<Attribute> result = new LinkedList<>();
     for ( RequestedAttribute a : ofNullable(attributes).orElse(emptyList()) )
     {
-      result.add(new Attribute().setFriendlyName(a.getFriendlyName())
-                                .setName(a.getName())
-                                .setNameFormat(AttributeNameFormat.fromUrn(a.getNameFormat()))
-                                .setValues(getJavaValues(a.getAttributeValues()))
-                                .setRequired(a.isRequired()));
+      result.add(resolveAttribute(a).setRequired(a.isRequired()));
     }
     return result;
   }
@@ -1874,22 +1879,24 @@ public class OpenSamlImplementation extends SpringSecuritySaml<OpenSamlImplement
     {
       for ( org.opensaml.saml.saml2.core.Attribute a : ofNullable(stmt.getAttributes()).orElse(emptyList()) )
       {
-        result.add(new Attribute().setFriendlyName(a.getFriendlyName())
-                                  .setName(a.getName())
-                                  .setNameFormat(AttributeNameFormat.fromUrn(a.getNameFormat()))
-                                  .setValues(getJavaValues(a.getAttributeValues())));
+        result.add(resolveAttribute(a));
       }
       for ( EncryptedAttribute encryptedAttribute : ofNullable(stmt.getEncryptedAttributes()).orElse(emptyList()) )
       {
         org.opensaml.saml.saml2.core.Attribute a = (org.opensaml.saml.saml2.core.Attribute)decrypt(encryptedAttribute,
                                                                                                    localKeys);
-        result.add(new Attribute().setFriendlyName(a.getFriendlyName())
-                                  .setName(a.getName())
-                                  .setNameFormat(AttributeNameFormat.fromUrn(a.getNameFormat()))
-                                  .setValues(getJavaValues(a.getAttributeValues())));
+        result.add(resolveAttribute(a));
       }
     }
     return result;
+  }
+
+  protected Attribute resolveAttribute(org.opensaml.saml.saml2.core.Attribute attribute)
+  {
+    return new Attribute().setFriendlyName(attribute.getFriendlyName())
+                          .setName(attribute.getName())
+                          .setNameFormat(AttributeNameFormat.fromUrn(attribute.getNameFormat()))
+                          .setValues(getJavaValues(attribute.getAttributeValues()));
   }
 
   protected List<Object> getJavaValues(List<XMLObject> attributeValues)
@@ -2099,6 +2106,15 @@ public class OpenSamlImplementation extends SpringSecuritySaml<OpenSamlImplement
                     .setNameQualifier(issuer.getNameQualifier());
   }
 
+  protected List<Object> getExtension(org.opensaml.saml.saml2.core.Extensions extensions)
+  {
+    if (extensions == null)
+    {
+      return Collections.emptyList();
+    }
+    return extensions.getUnknownXMLObjects().stream().map(Object.class::cast).collect(Collectors.toList());
+  }
+
   protected AuthenticationRequest resolveAuthenticationRequest(AuthnRequest parsed)
   {
     AuthnRequest request = parsed;
@@ -2120,7 +2136,8 @@ public class OpenSamlImplementation extends SpringSecuritySaml<OpenSamlImplement
                                       .setRequestedAuthenticationContext(getRequestedAuthenticationContext(request))
                                       .setAuthenticationContextClassReferences(getAuthenticationContextClassReferences(request))
                                       .setNameIdPolicy(fromNameIDPolicy(request.getNameIDPolicy()))
-                                      .setScoping(fromScoping(request.getScoping()));
+                                      .setScoping(fromScoping(request.getScoping()))
+                                      .setExtensions(getExtension(request.getExtensions()));
   }
 
   protected List<AuthenticationContextClassReference> getAuthenticationContextClassReferences(AuthnRequest request)

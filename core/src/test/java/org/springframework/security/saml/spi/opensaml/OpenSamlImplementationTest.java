@@ -24,6 +24,10 @@ import java.util.Collections;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.opensaml.core.xml.XMLObjectBuilderFactory;
+import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
+import org.opensaml.saml.ext.reqattr.RequestedAttributes;
+import org.opensaml.saml.saml2.metadata.RequestedAttribute;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.security.saml.saml2.attribute.Attribute;
 import org.springframework.security.saml.saml2.authentication.Assertion;
@@ -53,6 +57,51 @@ class OpenSamlImplementationTest
 
   {
     subject.bootstrap();
+  }
+
+  @Test
+  void authenticationRequestWithExtensionsAndOpenSamlXmlObjectToXml()
+  {
+    String requesterId = "http://requesterId";
+    String idpId = "http://idp";
+    AuthenticationRequest authenticationRequest = new AuthenticationRequest().setBinding(Binding.REDIRECT)
+                                                                             .setScoping(new Scoping(Collections.singletonList(idpId),
+                                                                                                     Collections.singletonList(requesterId),
+                                                                                                     5))
+                                                                             .setAssertionConsumerService(endpoint("http://assertionConsumerService"))
+                                                                             .setDestination(endpoint("http://destination"))
+                                                                             .setIssuer(new Issuer());
+
+    XMLObjectBuilderFactory builderFactory = XMLObjectProviderRegistrySupport.getBuilderFactory();
+    RequestedAttributes requestedAttributes = (RequestedAttributes)builderFactory.getBuilder(RequestedAttributes.DEFAULT_ELEMENT_NAME)
+                                                                                 .buildObject(RequestedAttributes.DEFAULT_ELEMENT_NAME);
+
+    RequestedAttribute requestedAttribute = (RequestedAttribute)builderFactory.getBuilder(RequestedAttribute.DEFAULT_ELEMENT_NAME)
+                                                                              .buildObject(RequestedAttribute.DEFAULT_ELEMENT_NAME);
+    String name = "name";
+    String friendlyName = "friendlyName";
+    requestedAttribute.setName(name);
+    requestedAttribute.setFriendlyName(friendlyName);
+    requestedAttribute.setIsRequired(true);
+    requestedAttribute.setNameFormat(org.opensaml.saml.saml2.core.Attribute.URI_REFERENCE);
+    requestedAttributes.getRequestedAttributes().add(requestedAttribute);
+
+    authenticationRequest.setExtensions(List.of(requestedAttributes));
+    String xml = subject.toXml(authenticationRequest);
+
+    assertNodeCount(xml, "//saml2p:Extensions//req-attr:RequestedAttributes//md:RequestedAttribute", 1);
+    Iterable<Node> nodes = getNodes(xml, "//saml2p:Extensions//req-attr:RequestedAttributes//md:RequestedAttribute");
+    String textContent = nodes.iterator().next().getAttributes().getNamedItem("Name").getTextContent();
+    assertEquals(name, textContent);
+
+    textContent = nodes.iterator().next().getAttributes().getNamedItem("FriendlyName").getTextContent();
+    assertEquals(friendlyName, textContent);
+
+    textContent = nodes.iterator().next().getAttributes().getNamedItem("isRequired").getTextContent();
+    assertEquals("true", textContent);
+
+    textContent = nodes.iterator().next().getAttributes().getNamedItem("NameFormat").getTextContent();
+    assertEquals(org.opensaml.saml.saml2.core.Attribute.URI_REFERENCE, textContent);
   }
 
   @Test

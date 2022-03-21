@@ -46,6 +46,7 @@ public class XmlTestUtil
     nsContext.put("saml2", Namespace.NS_ASSERTION);
     nsContext.put("idpdisc", Namespace.NS_IDP_DISCOVERY);
     nsContext.put("init", Namespace.NS_REQUEST_INIT);
+    nsContext.put("req-attr", Namespace.NS_REQ_ATTR);
     engine.setNamespaceContext(nsContext);
   }
 
