@@ -21,10 +21,10 @@ import static org.springframework.security.saml.util.XmlTestUtil.assertNodeAttri
 import static org.springframework.security.saml.util.XmlTestUtil.assertNodeCount;
 import static org.springframework.security.saml.util.XmlTestUtil.getNodes;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.UUID;
 
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 import org.opensaml.saml.saml2.core.NameIDType;
 import org.springframework.security.saml.saml2.metadata.IdentityProviderMetadata;
@@ -87,7 +87,7 @@ class ManageNameIDRequestTest extends MetadataBase
   {
     ManageNameIDRequest request = new ManageNameIDRequest();
     request.setId("MNIRQ" + UUID.randomUUID());
-    request.setIssueInstant(DateTime.now());
+    request.setIssueInstant(Instant.now());
     request.setDestination(sp.getServiceProvider().getManageNameIDService().get(0));
     request.setIssuer(new Issuer().setValue(idp.getEntityId()));
     request.setSigningKey(idp.getSigningKey(), idp.getAlgorithm(), idp.getDigest());

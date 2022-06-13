@@ -33,8 +33,6 @@ import static org.springframework.security.saml.saml2.authentication.Authenticat
 import static org.springframework.security.saml.saml2.authentication.StatusCode.SUCCESS;
 import static org.springframework.security.saml.saml2.authentication.SubjectConfirmationMethod.BEARER;
 import static org.springframework.security.saml.saml2.metadata.NameId.EMAIL;
-import static org.springframework.security.saml.util.DateUtils.fromZuluTime;
-import static org.springframework.security.saml.util.DateUtils.toZuluTime;
 import static org.springframework.security.saml.util.XmlTestUtil.assertNodeAttribute;
 import static org.springframework.security.saml.util.XmlTestUtil.assertNodeCount;
 import static org.springframework.security.saml.util.XmlTestUtil.getNodes;
@@ -44,11 +42,13 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.util.Iterator;
 import java.util.List;
 
 import org.hamcrest.core.IsEqual;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.saml.key.EncryptionKey;
 import org.springframework.security.saml.key.SigningKey;
@@ -68,44 +68,45 @@ import org.w3c.dom.Node;
 class AssertionTests extends MetadataBase
 {
 
+  private static final DateTimeFormatter formatter = new DateTimeFormatterBuilder().appendInstant(3).toFormatter();
 
   private static final SigningKey decryptionVerificationKey = new SigningKey("simplesamlphp",
                                                                              "MIIEEzCCAvugAwIBAgIJAIc1qzLrv+5nMA0GCSqGSIb3DQEBCwUAMIGfMQswCQYDVQQGEwJVUzELMAkGA1UECAwCQ08xFDASBgNVBAcMC0Nhc3RsZSBSb2NrMRwwGgYDVQQKDBNTYW1sIFRlc3RpbmcgU2VydmVyMQswCQYDVQQLDAJJVDEgMB4GA1UEAwwXc2ltcGxlc2FtbHBocC5jZmFwcHMuaW8xIDAeBgkqhkiG9w0BCQEWEWZoYW5pa0BwaXZvdGFsLmlvMB4XDTE1MDIyMzIyNDUwM1oXDTI1MDIyMjIyNDUwM1owgZ8xCzAJBgNVBAYTAlVTMQswCQYDVQQIDAJDTzEUMBIGA1UEBwwLQ2FzdGxlIFJvY2sxHDAaBgNVBAoME1NhbWwgVGVzdGluZyBTZXJ2ZXIxCzAJBgNVBAsMAklUMSAwHgYDVQQDDBdzaW1wbGVzYW1scGhwLmNmYXBwcy5pbzEgMB4GCSqGSIb3DQEJARYRZmhhbmlrQHBpdm90YWwuaW8wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC4cn62E1xLqpN34PmbrKBbkOXFjzWgJ9b+pXuaRft6A339uuIQeoeH5qeSKRVTl32L0gdz2ZivLwZXW+cqvftVW1tvEHvzJFyxeTW3fCUeCQsebLnA2qRa07RkxTo6Nf244mWWRDodcoHEfDUSbxfTZ6IExSojSIU2RnD6WllYWFdD1GFpBJOmQB8rAc8wJIBdHFdQnX8Ttl7hZ6rtgqEYMzYVMuJ2F2r1HSU1zSAvwpdYP6rRGFRJEfdA9mm3WKfNLSc5cljz0X/TXy0vVlAV95l9qcfFzPmrkNIst9FZSwpvB49LyAVke04FQPPwLgVH4gphiJH3jvZ7I+J5lS8VAgMBAAGjUDBOMB0GA1UdDgQWBBTTyP6Cc5HlBJ5+ucVCwGc5ogKNGzAfBgNVHSMEGDAWgBTTyP6Cc5HlBJ5+ucVCwGc5ogKNGzAMBgNVHRMEBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQAvMS4EQeP/ipV4jOG5lO6/tYCb/iJeAduOnRhkJk0DbX329lDLZhTTL/x/w/9muCVcvLrzEp6PN+VWfw5E5FWtZN0yhGtP9R+vZnrV+oc2zGD+no1/ySFOe3EiJCO5dehxKjYEmBRv5sU/LZFKZpozKN/BMEa6CqLuxbzb7ykxVr7EVFXwltPxzE9TmL9OACNNyF5eJHWMRMllarUvkcXlh4pux4ks9e6zV9DQBy2zds9f1I3qxg0eX6JnGrXi/ZiCT+lJgVe3ZFXiejiLAiKB04sXW3ti0LW3lx13Y1YlQ4/tlpgTgfIJxKV6nyPiLoK0nywbMd+vpAirDt2Oc+hk");
 
   private static final EncryptionKey decryptionKey = new EncryptionKey("decryption-key",
-                                                               "-----BEGIN RSA PRIVATE KEY-----\n"
-                                                                                 + "Proc-Type: 4,ENCRYPTED\n"
-                                                                                 + "DEK-Info: DES-EDE3-CBC,7C8510E4CED17A9F\n"
-                                                                                 + "\n"
-                                                                                 + "SRYezKuY+AgM+gdiklVDBQ1ljeCFKnW3c5BM9sEyEOfkQm0zZx6fLr0afup0ToE4\n"
-                                                                                 + "iJGLxKw8swAnUAIjYda9wxqIEBb9mILyuRPevyfzmio2lE9KnARDEYRBqbwD9Lpd\n"
-                                                                                 + "vwZKNGHHJbZAgcUNfhXiYakmx0cUyp8HeO3Vqa/0XMiI/HAdlJ/ruYeT4e2DSrz9\n"
-                                                                                 + "ORZA2S5OvNpRQeCVf26l6ODKXnkDL0t5fDVY4lAhaiyhZtoT0sADlPIERBw73kHm\n"
-                                                                                 + "fGCTniY9qT0DT+R5Rqukk42mN2ij/cAr+kdV5colBi1fuN6d9gawCiH4zSb3LzHQ\n"
-                                                                                 + "9ccSlz6iQV1Ty2cRuTkB3zWC6Oy4q0BRlXnVRFOnOfYJztO6c2hD3Q9NxkDAbcgR\n"
-                                                                                 + "YWJWHpd0/HI8GyBpOG7hAS1l6aoleH30QCDOo7N2rFrTAaPC6g84oZOFSqkqvx4R\n"
-                                                                                 + "KTbWRwgJsqVxM6GqV6H9x1LNn2CpBizdGnp8VvnIiYcEvItMJbT1C1yeIUPoDDU2\n"
-                                                                                 + "Ct0Jofw/dquXStHWftPFjpIqB+5Ou//HQ2VNzjbyThNWVGtjnEKwSiHacQLS1sB3\n"
-                                                                                 + "iqFtSN/VCpdOcRujEBba+x5vlc8XCV1qr6x1PbvfPZVjyFdSM6JQidr0uEeDGDW3\n"
-                                                                                 + "TuYC1YgURN8zh0QF2lJIMX3xgbhr8HHNXv60ulcjeqYmna6VCS8AKJQgRTr4DGWt\n"
-                                                                                 + "Afv9BFV943Yp3nHwPC7nYC4FvMxOn4qW4KrHRJl57zcY6VDL4J030CfmvLjqUbuT\n"
-                                                                                 + "LYiQp/YgFlmoE4bcGuCiaRfUJZCwooPK2dQMoIvMZeVl9ExUGdXVMg==\n"
-                                                                                 + "-----END RSA PRIVATE KEY-----",
-                                                               "-----BEGIN CERTIFICATE-----\n" + "MIICgTCCAeoCCQCuVzyqFgMSyDANBgkqhkiG9w0BAQsFADCBhDELMAkGA1UEBhMC\n"
-                                                                                                                    + "VVMxEzARBgNVBAgMCldhc2hpbmd0b24xEjAQBgNVBAcMCVZhbmNvdXZlcjEdMBsG\n"
-                                                                                                                    + "A1UECgwUU3ByaW5nIFNlY3VyaXR5IFNBTUwxCzAJBgNVBAsMAnNwMSAwHgYDVQQD\n"
-                                                                                                                    + "DBdzcC5zcHJpbmcuc2VjdXJpdHkuc2FtbDAeFw0xODA1MTQxNDMwNDRaFw0yODA1\n"
-                                                                                                                    + "MTExNDMwNDRaMIGEMQswCQYDVQQGEwJVUzETMBEGA1UECAwKV2FzaGluZ3RvbjES\n"
-                                                                                                                    + "MBAGA1UEBwwJVmFuY291dmVyMR0wGwYDVQQKDBRTcHJpbmcgU2VjdXJpdHkgU0FN\n"
-                                                                                                                    + "TDELMAkGA1UECwwCc3AxIDAeBgNVBAMMF3NwLnNwcmluZy5zZWN1cml0eS5zYW1s\n"
-                                                                                                                    + "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDRu7/EI0BlNzMEBFVAcbx+lLos\n"
-                                                                                                                    + "vzIWU+01dGTY8gBdhMQNYKZ92lMceo2CuVJ66cUURPym3i7nGGzoSnAxAre+0YIM\n"
-                                                                                                                    + "+U0razrWtAUE735bkcqELZkOTZLelaoOztmWqRbe5OuEmpewH7cx+kNgcVjdctOG\n"
-                                                                                                                    + "y3Q6x+I4qakY/9qhBQIDAQABMA0GCSqGSIb3DQEBCwUAA4GBAAeViTvHOyQopWEi\n"
-                                                                                                                    + "XOfI2Z9eukwrSknDwq/zscR0YxwwqDBMt/QdAODfSwAfnciiYLkmEjlozWRtOeN+\n"
-                                                                                                                    + "qK7UFgP1bRl5qksrYX5S0z2iGJh0GvonLUt3e20Ssfl5tTEDDnAEUMLfBkyaxEHD\n"
-                                                                                                                    + "RZ/nbTJ7VTeZOSyRoVn5XHhpuJ0B\n"
-                                                                                                                    + "-----END CERTIFICATE-----",
+                                                                       "-----BEGIN RSA PRIVATE KEY-----\n"
+                                                                                         + "Proc-Type: 4,ENCRYPTED\n"
+                                                                                         + "DEK-Info: DES-EDE3-CBC,7C8510E4CED17A9F\n"
+                                                                                         + "\n"
+                                                                                         + "SRYezKuY+AgM+gdiklVDBQ1ljeCFKnW3c5BM9sEyEOfkQm0zZx6fLr0afup0ToE4\n"
+                                                                                         + "iJGLxKw8swAnUAIjYda9wxqIEBb9mILyuRPevyfzmio2lE9KnARDEYRBqbwD9Lpd\n"
+                                                                                         + "vwZKNGHHJbZAgcUNfhXiYakmx0cUyp8HeO3Vqa/0XMiI/HAdlJ/ruYeT4e2DSrz9\n"
+                                                                                         + "ORZA2S5OvNpRQeCVf26l6ODKXnkDL0t5fDVY4lAhaiyhZtoT0sADlPIERBw73kHm\n"
+                                                                                         + "fGCTniY9qT0DT+R5Rqukk42mN2ij/cAr+kdV5colBi1fuN6d9gawCiH4zSb3LzHQ\n"
+                                                                                         + "9ccSlz6iQV1Ty2cRuTkB3zWC6Oy4q0BRlXnVRFOnOfYJztO6c2hD3Q9NxkDAbcgR\n"
+                                                                                         + "YWJWHpd0/HI8GyBpOG7hAS1l6aoleH30QCDOo7N2rFrTAaPC6g84oZOFSqkqvx4R\n"
+                                                                                         + "KTbWRwgJsqVxM6GqV6H9x1LNn2CpBizdGnp8VvnIiYcEvItMJbT1C1yeIUPoDDU2\n"
+                                                                                         + "Ct0Jofw/dquXStHWftPFjpIqB+5Ou//HQ2VNzjbyThNWVGtjnEKwSiHacQLS1sB3\n"
+                                                                                         + "iqFtSN/VCpdOcRujEBba+x5vlc8XCV1qr6x1PbvfPZVjyFdSM6JQidr0uEeDGDW3\n"
+                                                                                         + "TuYC1YgURN8zh0QF2lJIMX3xgbhr8HHNXv60ulcjeqYmna6VCS8AKJQgRTr4DGWt\n"
+                                                                                         + "Afv9BFV943Yp3nHwPC7nYC4FvMxOn4qW4KrHRJl57zcY6VDL4J030CfmvLjqUbuT\n"
+                                                                                         + "LYiQp/YgFlmoE4bcGuCiaRfUJZCwooPK2dQMoIvMZeVl9ExUGdXVMg==\n"
+                                                                                         + "-----END RSA PRIVATE KEY-----",
+                                                                       "-----BEGIN CERTIFICATE-----\n" + "MIICgTCCAeoCCQCuVzyqFgMSyDANBgkqhkiG9w0BAQsFADCBhDELMAkGA1UEBhMC\n"
+                                                                                                                            + "VVMxEzARBgNVBAgMCldhc2hpbmd0b24xEjAQBgNVBAcMCVZhbmNvdXZlcjEdMBsG\n"
+                                                                                                                            + "A1UECgwUU3ByaW5nIFNlY3VyaXR5IFNBTUwxCzAJBgNVBAsMAnNwMSAwHgYDVQQD\n"
+                                                                                                                            + "DBdzcC5zcHJpbmcuc2VjdXJpdHkuc2FtbDAeFw0xODA1MTQxNDMwNDRaFw0yODA1\n"
+                                                                                                                            + "MTExNDMwNDRaMIGEMQswCQYDVQQGEwJVUzETMBEGA1UECAwKV2FzaGluZ3RvbjES\n"
+                                                                                                                            + "MBAGA1UEBwwJVmFuY291dmVyMR0wGwYDVQQKDBRTcHJpbmcgU2VjdXJpdHkgU0FN\n"
+                                                                                                                            + "TDELMAkGA1UECwwCc3AxIDAeBgNVBAMMF3NwLnNwcmluZy5zZWN1cml0eS5zYW1s\n"
+                                                                                                                            + "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDRu7/EI0BlNzMEBFVAcbx+lLos\n"
+                                                                                                                            + "vzIWU+01dGTY8gBdhMQNYKZ92lMceo2CuVJ66cUURPym3i7nGGzoSnAxAre+0YIM\n"
+                                                                                                                            + "+U0razrWtAUE735bkcqELZkOTZLelaoOztmWqRbe5OuEmpewH7cx+kNgcVjdctOG\n"
+                                                                                                                            + "y3Q6x+I4qakY/9qhBQIDAQABMA0GCSqGSIb3DQEBCwUAA4GBAAeViTvHOyQopWEi\n"
+                                                                                                                            + "XOfI2Z9eukwrSknDwq/zscR0YxwwqDBMt/QdAODfSwAfnciiYLkmEjlozWRtOeN+\n"
+                                                                                                                            + "qK7UFgP1bRl5qksrYX5S0z2iGJh0GvonLUt3e20Ssfl5tTEDDnAEUMLfBkyaxEHD\n"
+                                                                                                                            + "RZ/nbTJ7VTeZOSyRoVn5XHhpuJ0B\n"
+                                                                                                                            + "-----END CERTIFICATE-----",
                                                                        "sppassword");
 
   @Test
@@ -121,7 +122,7 @@ class AssertionTests extends MetadataBase
     Iterable<Node> nodes = assertNodeCount(xml, "//samlp:Response", 1);
     assertNodeAttribute(nodes.iterator().next(), "ID", equalTo(response.getId()));
     assertNodeAttribute(nodes.iterator().next(), "InResponseTo", equalTo(response.getInResponseTo()));
-    assertNodeAttribute(nodes.iterator().next(), "IssueInstant", equalTo(toZuluTime(response.getIssueInstant())));
+    assertNodeAttribute(nodes.iterator().next(), "IssueInstant", equalTo(formatter.format(response.getIssueInstant())));
     assertNodeAttribute(nodes.iterator().next(), "Destination", equalTo(response.getDestination()));
 
     // status
@@ -156,7 +157,7 @@ class AssertionTests extends MetadataBase
     assertThat(response.getId(), equalTo("a09e79055-6968-46fa-8b6d-55a883580db7"));
     assertThat(response.getDestination(), equalTo("https://sp.saml.spring.io/saml/sp/sso"));
     assertThat(response.getInResponseTo(), equalTo("a77141543-a0b4-4720-9e64-b08814d2af86"));
-    assertThat(response.getIssueInstant(), equalTo(fromZuluTime("2018-05-07T22:14:19.785Z")));
+    assertThat(response.getIssueInstant(), equalTo(Instant.parse("2018-05-07T22:14:19.785Z")));
     assertThat(response.getIssuer().getValue(), equalTo("https://idp.saml.spring.io"));
 
     Status status = response.getStatus();
@@ -171,7 +172,7 @@ class AssertionTests extends MetadataBase
     assertNotNull(assertion);
     assertThat(assertion.getId(), equalTo("0d295a03-2f6f-4c6f-8ca2-6b456219ccd0"));
     assertThat(assertion.getVersion(), equalTo("2.0"));
-    assertThat(assertion.getIssueInstant(), equalTo(fromZuluTime("2018-05-07T22:14:19.785Z")));
+    assertThat(assertion.getIssueInstant(), equalTo(Instant.parse("2018-05-07T22:14:19.785Z")));
 
     Subject subject = assertion.getSubject();
     assertNotNull(subject);
@@ -191,13 +192,13 @@ class AssertionTests extends MetadataBase
     assertNotNull(data);
     assertThat(data.getInResponseTo(), equalTo("77141543-a0b4-4720-9e64-b08814d2af86"));
     assertThat(data.getRecipient(), equalTo("https://sp.saml.spring.io/saml/sp/sso"));
-    assertThat(data.getNotOnOrAfter(), equalTo(fromZuluTime("2018-05-07T22:19:19.785Z")));
-    assertThat(data.getNotBefore(), equalTo(fromZuluTime("2018-05-07T22:14:19.785Z")));
+    assertThat(data.getNotOnOrAfter(), equalTo(Instant.parse("2018-05-07T22:19:19.785Z")));
+    assertThat(data.getNotBefore(), equalTo(Instant.parse("2018-05-07T22:14:19.785Z")));
 
     Conditions conditions = assertion.getConditions();
     assertNotNull(conditions);
-    assertThat(conditions.getNotOnOrAfter(), equalTo(fromZuluTime("2018-05-07T22:19:19.785Z")));
-    assertThat(conditions.getNotBefore(), equalTo(fromZuluTime("2018-05-07T22:14:19.785Z")));
+    assertThat(conditions.getNotOnOrAfter(), equalTo(Instant.parse("2018-05-07T22:19:19.785Z")));
+    assertThat(conditions.getNotBefore(), equalTo(Instant.parse("2018-05-07T22:14:19.785Z")));
     List<AssertionCondition<?, ?>> criteria = conditions.getCriteria();
     assertNotNull(criteria);
     assertThat(criteria.size(), equalTo(1));
@@ -327,7 +328,7 @@ class AssertionTests extends MetadataBase
              .get(0)
              .setAuthenticationContext(new AuthenticationContext().setClassReference(AuthenticationContextClassReference.fromUrn(PASSWORD_PROTECTED_TRANSPORT)));
 
-    DateTime time = new DateTime(MetadataBase.time.millis());
+    Instant time = Instant.now(MetadataBase.time);
     assertion.addAttribute(new Attribute().setFriendlyName("Random Attributes")
                                           .setName("rattr")
                                           .addValues("Filip",
@@ -353,7 +354,9 @@ class AssertionTests extends MetadataBase
     assertNodeCount(xml, "//saml:Assertion", 1);
     Iterable<Node> nodes = getNodes(xml, "//saml:Assertion");
     assertNodeAttribute(nodes.iterator().next(), "Version", IsEqual.equalTo("2.0"));
-    assertNodeAttribute(nodes.iterator().next(), "IssueInstant", equalTo(toZuluTime(assertion.getIssueInstant())));
+    assertNodeAttribute(nodes.iterator().next(),
+                        "IssueInstant",
+                        equalTo(formatter.format(assertion.getIssueInstant())));
     assertNodeAttribute(nodes.iterator().next(), "ID", equalTo(assertion.getId()));
 
     assertNodeCount(xml, "//saml:Issuer", 1);
@@ -375,11 +378,11 @@ class AssertionTests extends MetadataBase
     nodes = getNodes(xml, "//saml:SubjectConfirmation/saml:SubjectConfirmationData");
     assertNodeAttribute(nodes.iterator().next(),
                         "NotOnOrAfter",
-                        equalTo(toZuluTime(assertion.getSubject()
-                                                    .getConfirmations()
-                                                    .get(0)
-                                                    .getConfirmationData()
-                                                    .getNotOnOrAfter())));
+                        equalTo(formatter.format(assertion.getSubject()
+                                                          .getConfirmations()
+                                                          .get(0)
+                                                          .getConfirmationData()
+                                                          .getNotOnOrAfter())));
     assertNodeAttribute(nodes.iterator().next(),
                         "InResponseTo",
                         equalTo(assertion.getSubject()
@@ -392,10 +395,10 @@ class AssertionTests extends MetadataBase
     nodes = getNodes(xml, "//saml:Conditions");
     assertNodeAttribute(nodes.iterator().next(),
                         "NotOnOrAfter",
-                        equalTo(toZuluTime(assertion.getConditions().getNotOnOrAfter())));
+                        equalTo(formatter.format(assertion.getConditions().getNotOnOrAfter())));
     assertNodeAttribute(nodes.iterator().next(),
                         "NotBefore",
-                        equalTo(toZuluTime(assertion.getConditions().getNotBefore())));
+                        equalTo(formatter.format(assertion.getConditions().getNotBefore())));
 
     assertNodeCount(xml, "//saml:Conditions/saml:AudienceRestriction/saml:Audience", 1);
     nodes = getNodes(xml, "//saml:Conditions/saml:AudienceRestriction/saml:Audience");
@@ -406,7 +409,9 @@ class AssertionTests extends MetadataBase
     assertNodeCount(xml, "//saml:AuthnStatement", 1);
     nodes = getNodes(xml, "//saml:AuthnStatement");
     AuthenticationStatement authnStatement = assertion.getAuthenticationStatements().get(0);
-    assertNodeAttribute(nodes.iterator().next(), "AuthnInstant", equalTo(toZuluTime(authnStatement.getAuthInstant())));
+    assertNodeAttribute(nodes.iterator().next(),
+                        "AuthnInstant",
+                        equalTo(formatter.format(authnStatement.getAuthInstant())));
     assertNodeAttribute(nodes.iterator().next(), "SessionIndex", equalTo(authnStatement.getSessionIndex()));
     assertNodeCount(xml, "//saml:AuthnStatement/saml:AuthnContext/saml:AuthnContextClassRef", 1);
     nodes = getNodes(xml, "//saml:AuthnStatement/saml:AuthnContext/saml:AuthnContextClassRef");
@@ -424,7 +429,7 @@ class AssertionTests extends MetadataBase
     Iterator<Node> iterator = nodes.iterator();
     assertThat(iterator.next().getTextContent(), equalTo("Filip"));
     assertThat(iterator.next().getTextContent(), equalTo("true"));
-    assertThat(iterator.next().getTextContent(), equalTo(toZuluTime(time)));
+    assertThat(iterator.next().getTextContent(), equalTo(formatter.format(time)));
     assertThat(iterator.next().getTextContent(), equalTo("54"));
     assertThat(iterator.next().getTextContent(), equalTo("33.3"));
     assertThat(iterator.next().getTextContent(), equalTo("http://test.uri.com"));
@@ -444,7 +449,7 @@ class AssertionTests extends MetadataBase
 
     assertNotNull(assertion);
     assertThat(assertion.getId(), equalTo("1aa4400b-d6f1-41d1-a80a-2331816b7876"));
-    assertThat(assertion.getIssueInstant(), equalTo(fromZuluTime("2018-05-02T20:07:06.785Z")));
+    assertThat(assertion.getIssueInstant(), equalTo(Instant.parse("2018-05-02T20:07:06.785Z")));
     assertThat(assertion.getVersion(), equalTo("2.0"));
 
     assertNotNull(assertion.getIssuer());
@@ -464,12 +469,12 @@ class AssertionTests extends MetadataBase
     SubjectConfirmationData confirmationData = assertion.getSubject().getConfirmations().get(0).getConfirmationData();
     assertNotNull(confirmationData);
     assertThat(confirmationData.getInResponseTo(), equalTo("0ab65bc9-6ffc-4fce-a186-108ad42db073"));
-    assertThat(confirmationData.getNotOnOrAfter(), equalTo(fromZuluTime("2018-05-02T20:09:06.785Z")));
-    assertThat(confirmationData.getNotBefore(), equalTo(fromZuluTime("2018-05-02T20:06:06.785Z")));
+    assertThat(confirmationData.getNotOnOrAfter(), equalTo(Instant.parse("2018-05-02T20:09:06.785Z")));
+    assertThat(confirmationData.getNotBefore(), equalTo(Instant.parse("2018-05-02T20:06:06.785Z")));
 
     assertNotNull(assertion.getConditions());
-    assertThat(assertion.getConditions().getNotOnOrAfter(), equalTo(fromZuluTime("2018-05-02T20:05:06.785Z")));
-    assertThat(assertion.getConditions().getNotBefore(), equalTo(fromZuluTime("2018-05-02T20:06:06.785Z")));
+    assertThat(assertion.getConditions().getNotOnOrAfter(), equalTo(Instant.parse("2018-05-02T20:05:06.785Z")));
+    assertThat(assertion.getConditions().getNotBefore(), equalTo(Instant.parse("2018-05-02T20:06:06.785Z")));
     assertNotNull(assertion.getConditions().getCriteria());
     assertThat(assertion.getConditions().getCriteria().size(), equalTo(2));
     assertThat(assertion.getConditions().getCriteria().get(0).getClass(), equalTo(AudienceRestriction.class));
@@ -483,8 +488,8 @@ class AssertionTests extends MetadataBase
     assertNotNull(stmt);
     assertNotNull(stmt.getAuthInstant());
     assertNotNull(stmt.getSessionNotOnOrAfter());
-    assertThat(toZuluTime(stmt.getAuthInstant()), equalTo("2018-05-02T20:07:06.785Z"));
-    assertThat(toZuluTime(stmt.getSessionNotOnOrAfter()), equalTo("2018-05-02T20:37:06.785Z"));
+    assertThat(formatter.format(stmt.getAuthInstant()), equalTo("2018-05-02T20:07:06.785Z"));
+    assertThat(formatter.format(stmt.getSessionNotOnOrAfter()), equalTo("2018-05-02T20:37:06.785Z"));
     assertThat(stmt.getSessionIndex(), equalTo("aeb9e771-c5dd-4b9d-a5bc-71e9e0e195a9"));
 
     assertNotNull(stmt.getAuthenticationContext());
@@ -501,7 +506,7 @@ class AssertionTests extends MetadataBase
     assertEquals(attribute.getValues().size(), 8);
     assertThat(attribute.getValues().get(0), equalTo("Filip"));
     assertThat(attribute.getValues().get(1), equalTo(TRUE));
-    assertThat(attribute.getValues().get(2), equalTo(fromZuluTime("2018-05-02T20:07:06.785Z")));
+    assertThat(attribute.getValues().get(2), equalTo(Instant.parse("2018-05-02T20:07:06.785Z")));
     assertThat(attribute.getValues().get(3), equalTo(54));
     assertThat(attribute.getValues().get(4), equalTo("33.3"));
     assertThat(attribute.getValues().get(5), equalTo(new URI("http://test.uri.com")));

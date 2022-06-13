@@ -21,10 +21,10 @@ import static org.springframework.security.saml.util.XmlTestUtil.assertNodeAttri
 import static org.springframework.security.saml.util.XmlTestUtil.assertNodeCount;
 import static org.springframework.security.saml.util.XmlTestUtil.getNodes;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.UUID;
 
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.saml.saml2.metadata.IdentityProviderMetadata;
 import org.springframework.security.saml.saml2.metadata.MetadataBase;
@@ -82,7 +82,7 @@ class ManageNameIDResponseTest extends MetadataBase
   {
     ManageNameIDResponse response = new ManageNameIDResponse();
     response.setId("MNIR" + UUID.randomUUID());
-    response.setIssueInstant(DateTime.now());
+    response.setIssueInstant(Instant.now());
     response.setInResponseTo("in-response-to-value");
     response.setIssuer(new Issuer().setValue(idp.getEntityId()));
     response.setSigningKey(sp.getSigningKey(), sp.getAlgorithm(), sp.getDigest());

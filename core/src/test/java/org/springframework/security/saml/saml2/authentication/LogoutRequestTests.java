@@ -26,16 +26,17 @@ import static org.springframework.security.saml.saml2.signature.DigestMethod.SHA
 import static org.springframework.security.saml.saml2.signature.DigestMethod.SHA512;
 import static org.springframework.security.saml.spi.ExamplePemKey.RSA_TEST_KEY;
 import static org.springframework.security.saml.spi.ExamplePemKey.SP_RSA_KEY;
-import static org.springframework.security.saml.util.DateUtils.fromZuluTime;
-import static org.springframework.security.saml.util.DateUtils.toZuluTime;
 import static org.springframework.security.saml.util.XmlTestUtil.assertNodeAttribute;
 import static org.springframework.security.saml.util.XmlTestUtil.assertNodeCount;
 import static org.springframework.security.saml.util.XmlTestUtil.getNodes;
 
 import java.time.Clock;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.saml.saml2.metadata.Endpoint;
 import org.springframework.security.saml.saml2.signature.AlgorithmMethod;
@@ -50,11 +51,13 @@ import org.springframework.security.saml.spi.opensaml.OpenSamlImplementation;
 class LogoutObjectTests
 {
 
+  private static final DateTimeFormatter formatter = new DateTimeFormatterBuilder().appendInstant(3).toFormatter();
+
   SpringSecuritySaml<OpenSamlImplementation> saml = new OpenSamlImplementation(Clock.systemUTC()).init();
 
   private String issuer = "http://sp.test.org";
 
-  private DateTime instant = new DateTime();
+  private Instant instant = Instant.now();
 
   private String destination = "http://idp.test.org";
 
@@ -145,7 +148,7 @@ class LogoutObjectTests
     assertThat(request.getId(), equalTo("request-id"));
     assertNotNull(request.getDestination());
     assertThat(request.getDestination().getLocation(), equalTo("http://idp.test.org"));
-    assertThat(request.getIssueInstant(), equalTo(fromZuluTime("2018-06-04T14:53:16.712Z")));
+    assertThat(request.getIssueInstant(), equalTo(Instant.parse("2018-06-04T14:53:16.712Z")));
     assertNotNull(request.getIssuer());
     assertThat(request.getIssuer().getValue(), equalTo("http://sp.test.org"));
     assertNotNull(request.getSignature());
@@ -169,16 +172,14 @@ class LogoutObjectTests
 
     LogoutRequest request = new LogoutRequest().setId("request-id")
                                                .setDestination(new Endpoint().setLocation(destination))
-                                               .setSigningKey(RSA_TEST_KEY.getSigningKey("test"),
-                                                              RSA_SHA256,
-                                                              SHA512)
+                                               .setSigningKey(RSA_TEST_KEY.getSigningKey("test"), RSA_SHA256, SHA512)
                                                .setNameId(new NameIdPrincipal().setNameQualifier(issuer)
                                                                                .setSpNameQualifier(issuer)
                                                                                .setFormat(EMAIL)
                                                                                .setValue("test@test.org"))
                                                .setReason(LogoutReason.USER)
                                                .setIssueInstant(instant)
-                                               .setNotOnOrAfter(instant.plusHours(1))
+                                               .setNotOnOrAfter(instant.plus(1, ChronoUnit.HOURS))
                                                .setIssuer(new Issuer().setValue(issuer));
     String xml = saml.toXml(request);
 
@@ -212,8 +213,7 @@ class LogoutObjectTests
                         "Format",
                         equalTo(EMAIL.toString()));
 
-    saml.validateSignature(saml.resolve(xml, null, null),
-                           Arrays.asList(RSA_TEST_KEY.getSigningKey("test")));
+    saml.validateSignature(saml.resolve(xml, null, null), Arrays.asList(RSA_TEST_KEY.getSigningKey("test")));
 
     Exception expected = assertThrows(SignatureException.class,
                                       // using the wrong key
@@ -234,14 +234,13 @@ class LogoutObjectTests
     assertThat(response.getId(), equalTo("response-id"));
     assertNotNull(response.getDestination());
     assertThat(response.getDestination(), equalTo(destination));
-    assertThat(response.getIssueInstant(), equalTo(fromZuluTime("2018-06-04T19:24:09.572Z")));
+    assertThat(response.getIssueInstant(), equalTo(Instant.parse("2018-06-04T19:24:09.572Z")));
     assertThat(response.getInResponseTo(), equalTo("in-response-to"));
     assertThat(response.getIssuer().getValue(), equalTo(issuer));
     assertThat(response.getStatus().getCode(), equalTo(StatusCode.SUCCESS));
     assertThat(response.getStatus().getMessage(), equalTo("User logged out!"));
 
-    Signature signature = saml.validateSignature(response,
-                                                 Arrays.asList(RSA_TEST_KEY.getSigningKey("test")));
+    Signature signature = saml.validateSignature(response, Arrays.asList(RSA_TEST_KEY.getSigningKey("test")));
     assertNotNull(signature);
     assertThat(signature.isValidated(), equalTo(true));
     assertThat(signature.getSignatureAlgorithm(), equalTo(AlgorithmMethod.RSA_SHA512));
@@ -277,7 +276,7 @@ class LogoutObjectTests
     assertNodeAttribute(getNodes(xml, "//samlp:LogoutResponse").iterator().next(), "Version", equalTo("2.0"));
     assertNodeAttribute(getNodes(xml, "//samlp:LogoutResponse").iterator().next(),
                         "IssueInstant",
-                        equalTo(toZuluTime(instant)));
+                        equalTo(formatter.format(instant)));
 
 
     // OpenSAML doesn't write out issuer
@@ -305,8 +304,7 @@ class LogoutObjectTests
                                                                                        .getTextContent(),
                equalTo("User logged out!"));
 
-    saml.validateSignature(saml.resolve(xml, null, null),
-                           Arrays.asList(RSA_TEST_KEY.getSigningKey("test")));
+    saml.validateSignature(saml.resolve(xml, null, null), Arrays.asList(RSA_TEST_KEY.getSigningKey("test")));
 
     Exception expected = assertThrows(SignatureException.class,
                                       // using the wrong key

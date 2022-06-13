@@ -40,7 +40,7 @@ public interface HostedProviderService<C extends LocalProviderConfiguration<C, E
 
   LogoutRequest logoutRequest(R recipient, NameIdPrincipal principal);
 
-  LogoutResponse logoutResponse(LogoutRequest request, R recipient);
+  LogoutResponse logoutResponse(String logoutRequestId, R recipient);
 
   R getRemoteProvider(Saml2Object saml2Object);
 

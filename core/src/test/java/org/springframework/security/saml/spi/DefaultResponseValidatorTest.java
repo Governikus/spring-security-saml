@@ -17,6 +17,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -25,8 +27,6 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
-import org.joda.time.DateTime;
-import org.joda.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -77,14 +77,14 @@ class DefaultResponseValidatorTest
 
   private IdentityProviderMetadata responder;
 
-  private static final int RESPONSE_TIME = (int)TimeUnit.MINUTES.toMillis(2);
+  private static final long RESPONSE_TIME = TimeUnit.MINUTES.toMillis(2);
 
-  final static int CHECK_BOUNDARIES = RESPONSE_TIME + 1;
+  final static long CHECK_BOUNDARIES = RESPONSE_TIME + 1;
 
   @BeforeEach
   public void init()
   {
-    responseValidator = new DefaultResponseValidator((int)TimeUnit.MINUTES.toMillis(2), TimeUnit.HOURS.toMillis(24),
+    responseValidator = new DefaultResponseValidator(TimeUnit.MINUTES.toMillis(2), TimeUnit.HOURS.toMillis(24),
                                                      false, false, NameId.TRANSIENT);
     laxResponseValidator = new DefaultResponseValidator();
     requester = createServiceProviderMetadata();
@@ -216,10 +216,10 @@ class DefaultResponseValidatorTest
 
   @ParameterizedTest(name = " test validator and expect error: {1}")
   @MethodSource({"invalidIssueInstants"})
-  void testIssueInstantsInResponses(Instant issueInstant, String expectedErrorMessage, int changeTimeMilliseconds)
+  void testIssueInstantsInResponses(Instant issueInstant, String expectedErrorMessage, long changeTimeMilliseconds)
   {
     Response response = validResponse().setIssueInstant(changeTimeMilliseconds == 0 ? null
-      : issueInstant.plus(changeTimeMilliseconds).toDateTime());
+      : issueInstant.plusMillis(changeTimeMilliseconds));
 
     ValidationResult validationResult = responseValidator.validate(response,
                                                                    requestContext(),
@@ -232,10 +232,10 @@ class DefaultResponseValidatorTest
 
   @ParameterizedTest(name = " test validator and expect error: {1}")
   @MethodSource({"invalidIssueInstants"})
-  void testIssueInstantsInAssertion(Instant issueInstant, String expectedErrorMessage, int changeTimeMilliseconds)
+  void testIssueInstantsInAssertion(Instant issueInstant, String expectedErrorMessage, long changeTimeMilliseconds)
   {
     Assertion response = validAssertion().setIssueInstant(changeTimeMilliseconds == 0 ? null
-      : issueInstant.plus(changeTimeMilliseconds).toDateTime());
+      : issueInstant.plusMillis(changeTimeMilliseconds));
 
     ValidationResult validationResult = responseValidator.validate(response,
                                                                    requestContext(),
@@ -423,14 +423,14 @@ class DefaultResponseValidatorTest
 
   static Stream<Arguments> invalidSubjectConfirmationData()
   {
-    DateTime expired = new DateTime().minusDays(1);
+    Instant expired = Instant.now().minus(1, ChronoUnit.DAYS);
 
     return Stream.of(Arguments.of(null, "Empty subject confirmation data"),
                      Arguments.of(validSubjectConfirmationData().setInResponseTo("unknown"),
                                   "Invalid InResponseTo ID, not found in supplied list"),
                      Arguments.of(validSubjectConfirmationData().setInResponseTo(""),
                                   "InResponseTo is missing and unsolicited responses are disabled"),
-                     Arguments.of(validSubjectConfirmationData().setNotBefore(new DateTime()),
+                     Arguments.of(validSubjectConfirmationData().setNotBefore(Instant.now()),
                                   "Subject confirmation data must not have NotBefore date"),
                      Arguments.of(validSubjectConfirmationData().setNotOnOrAfter(expired),
                                   "Invalid NotOnOrAfter date: '" + expired + "'"),
@@ -461,18 +461,18 @@ class DefaultResponseValidatorTest
 
   static Stream<Arguments> invalidConditions()
   {
-    DateTime invalidNotBefore = new DateTime().plusMinutes(10);
-    DateTime invalidNotOnOrAfter = new DateTime().minusMinutes(10);
+    Instant invalidNotBefore = Instant.now().plus(10, ChronoUnit.MINUTES);
+    Instant invalidNotOnOrAfter = Instant.now().minus(10, ChronoUnit.MINUTES);
     AudienceRestriction emptyAudienceRestriction = new AudienceRestriction().setAudiences(new ArrayList<>());
-    AudienceRestriction invalidAudienceRestriction = new AudienceRestriction().setAudiences(Arrays.asList("no valid entity id"));
+    AudienceRestriction invalidAudienceRestriction = new AudienceRestriction().setAudiences(List.of("no valid entity id"));
 
     return Stream.of(Arguments.of(validConditions().setNotBefore(invalidNotBefore),
                                   "Conditions expired (not before): " + invalidNotBefore.toString()),
                      Arguments.of(validConditions().setNotOnOrAfter(invalidNotOnOrAfter),
                                   "Conditions expired (not on or after): " + invalidNotOnOrAfter.toString()),
-                     Arguments.of(validConditions().setCriteria(Arrays.asList(emptyAudienceRestriction)),
+                     Arguments.of(validConditions().setCriteria(List.of(emptyAudienceRestriction)),
                                   "Audience Conditions contains no audiences!"),
-                     Arguments.of(validConditions().setCriteria(Arrays.asList(invalidAudienceRestriction)),
+                     Arguments.of(validConditions().setCriteria(List.of(invalidAudienceRestriction)),
                                   "Audience restriction evaluation failed for assertion condition. Expected 'ServiceProviderEntityID' Was '[no valid entity id]'"));
   }
 
@@ -496,21 +496,21 @@ class DefaultResponseValidatorTest
   static Assertion validAssertion()
   {
     Signature signature = new Signature().setValidated(true);
-    List<Attribute> attributes = Arrays.asList(new Attribute());
+    List<Attribute> attributes = List.of(new Attribute());
 
     return new Assertion().setSignature(signature)
                           .setIssuer(new Issuer().setValue(ISSUER_VALUE))
-                          .setIssueInstant(new DateTime())
+                          .setIssueInstant(Instant.now())
                           .setSubject(validSubject())
                           .setAttributes(attributes)
-                          .setAuthenticationStatements(Arrays.asList(new AuthenticationStatement().setAuthInstant(DateTime.now())))
+                          .setAuthenticationStatements(List.of(new AuthenticationStatement().setAuthInstant(Instant.now())))
                           .setConditions(validConditions());
   }
 
   static Subject validSubject()
   {
-    List<SubjectConfirmation> confirmation = Arrays.asList(new SubjectConfirmation().setMethod(SubjectConfirmationMethod.BEARER)
-                                                                                    .setConfirmationData(validSubjectConfirmationData()));
+    List<SubjectConfirmation> confirmation = List.of(new SubjectConfirmation().setMethod(SubjectConfirmationMethod.BEARER)
+                                                                              .setConfirmationData(validSubjectConfirmationData()));
 
     return new Subject().setConfirmations(confirmation)
                         .setPrincipal(new NameIdPrincipal().setFormat(NameId.TRANSIENT).setValue("testValue"));
@@ -518,29 +518,29 @@ class DefaultResponseValidatorTest
 
   static SubjectConfirmationData validSubjectConfirmationData()
   {
-    return new SubjectConfirmationData().setNotOnOrAfter(new DateTime())
+    return new SubjectConfirmationData().setNotOnOrAfter(Instant.now())
                                         .setInResponseTo(TEST_IN_RESPONSE_TO)
                                         .setRecipient(VALID_TEST_RECIPIENT);
   }
 
   static Conditions validConditions()
   {
-    return new Conditions().setNotBefore(DateTime.now())
+    return new Conditions().setNotBefore(Instant.now())
                            .addCriteria(new AudienceRestriction().addAudience("ServiceProviderEntityID"));
   }
 
   private static Response validResponse()
   {
-    AuthenticationStatement authenticationStatement = new AuthenticationStatement().setAuthInstant(DateTime.now());
+    AuthenticationStatement authenticationStatement = new AuthenticationStatement().setAuthInstant(Instant.now());
     authenticationStatement.getAuthenticationContext()
                            .setClassReference(AuthenticationContextClassReference.fromUrn(AuthenticationContextClassReference.AuthenticationContextClassReferenceType.PASSWORD));
 
     Assertion assertion = new Assertion().setVersion("2.0")
-                                         .setId("AssertionId" + UUID.randomUUID().toString())
-                                         .setIssueInstant(DateTime.now())
+                                         .setId("AssertionId" + UUID.randomUUID())
+                                         .setIssueInstant(Instant.now())
                                          .setIssuer(ISSUER_VALUE)
                                          .setSubject(validSubject())
-                                         .setConditions(new Conditions().setNotBefore(DateTime.now())
+                                         .setConditions(new Conditions().setNotBefore(Instant.now())
                                                                         .addCriteria(new AudienceRestriction().addAudience("ServiceProviderEntityID")))
                                          .addAttribute(new Attribute().setNameFormat(AttributeNameFormat.URI)
                                                                       .addValues("Mustermann"))
@@ -549,7 +549,7 @@ class DefaultResponseValidatorTest
 
     return new Response().setVersion("2.0")
                          .setId("ResponseId")
-                         .setIssueInstant(DateTime.now())
+                         .setIssueInstant(Instant.now())
                          .setInResponseTo(TEST_IN_RESPONSE_TO)
                          .setIssuer(new Issuer().setValue(ISSUER_VALUE).setFormat(NameId.ENTITY))
                          .setDestination("http://localhost/saml/sp/SSO/alias")

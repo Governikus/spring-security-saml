@@ -12,13 +12,13 @@
  */
 package org.springframework.security.saml.saml2.metadata;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
 import javax.xml.datatype.Duration;
 
-import org.joda.time.DateTime;
 import org.springframework.security.saml.key.EncryptionKey;
 import org.springframework.security.saml.key.SigningKey;
 import org.springframework.security.saml.saml2.signature.Signature;
@@ -40,7 +40,7 @@ public class Provider<T extends Provider<T>>
 
   private String id;
 
-  private DateTime validUntil;
+  private Instant validUntil;
 
   private Duration cacheDuration;
 
@@ -106,13 +106,13 @@ public class Provider<T extends Provider<T>>
     return (T)this;
   }
 
-  public DateTime getValidUntil()
+  public Instant getValidUntil()
   {
     return validUntil;
   }
 
   @SuppressWarnings("unchecked")
-  public T setValidUntil(DateTime validUntil)
+  public T setValidUntil(Instant validUntil)
   {
     this.validUntil = validUntil;
     return (T)this;

@@ -13,9 +13,13 @@
 
 package org.springframework.security.saml.provider.identity.config;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.security.saml.provider.config.LocalProviderConfiguration;
+import org.springframework.security.saml.saml2.attribute.Attribute;
+import org.springframework.security.saml.saml2.metadata.Endpoint;
 
 
 public class LocalIdentityProviderConfiguration
@@ -33,6 +37,10 @@ public class LocalIdentityProviderConfiguration
   private long notBefore = TimeUnit.MINUTES.toMillis(1);
 
   private long sessionNotOnOrAfter = TimeUnit.MINUTES.toMillis(30);
+
+  private List<Endpoint> singleSignOnServices = new ArrayList<>();
+
+  private List<Attribute> attributes = new ArrayList<>();
 
   public LocalIdentityProviderConfiguration()
   {
@@ -105,4 +113,25 @@ public class LocalIdentityProviderConfiguration
     return this;
   }
 
+  public List<Endpoint> getSingleSignOnServices()
+  {
+    return singleSignOnServices;
+  }
+
+  public LocalIdentityProviderConfiguration setSingleSignOnServices(List<Endpoint> singleSignOnServices)
+  {
+    this.singleSignOnServices = singleSignOnServices;
+    return this;
+  }
+
+  public List<Attribute> getAttributes()
+  {
+    return attributes;
+  }
+
+  public LocalIdentityProviderConfiguration setAttributes(List<Attribute> attributes)
+  {
+    this.attributes = attributes;
+    return this;
+  }
 }

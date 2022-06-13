@@ -13,7 +13,8 @@
 
 package org.springframework.security.saml.saml2.authentication;
 
-import org.joda.time.DateTime;
+import java.time.Instant;
+
 import org.springframework.security.saml.key.SigningKey;
 import org.springframework.security.saml.saml2.signature.AlgorithmMethod;
 import org.springframework.security.saml.saml2.signature.DigestMethod;
@@ -37,7 +38,7 @@ public class LogoutRequest extends Request<LogoutRequest>
 
   private LogoutReason reason;
 
-  private DateTime notOnOrAfter;
+  private Instant notOnOrAfter;
 
   public AlgorithmMethod getAlgorithm()
   {
@@ -83,12 +84,12 @@ public class LogoutRequest extends Request<LogoutRequest>
     return this;
   }
 
-  public DateTime getNotOnOrAfter()
+  public Instant getNotOnOrAfter()
   {
     return notOnOrAfter;
   }
 
-  public LogoutRequest setNotOnOrAfter(DateTime notOnOrAfter)
+  public LogoutRequest setNotOnOrAfter(Instant notOnOrAfter)
   {
     this.notOnOrAfter = notOnOrAfter;
     return this;

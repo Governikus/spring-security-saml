@@ -21,7 +21,6 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.velocity.VelocityContext;
-import org.apache.velocity.runtime.log.NullLogChute;
 import org.springframework.security.saml.SamlTemplateEngine;
 
 import net.shibboleth.utilities.java.support.velocity.VelocityEngine;
@@ -29,19 +28,6 @@ import net.shibboleth.utilities.java.support.velocity.VelocityEngine;
 
 public class OpenSamlVelocityEngine implements SamlTemplateEngine
 {
-
-  private final boolean disableVelocityLog;
-
-  public OpenSamlVelocityEngine()
-  {
-    this(true);
-  }
-
-  public OpenSamlVelocityEngine(boolean disableVelocityLog)
-  {
-    this.disableVelocityLog = disableVelocityLog;
-  }
-
 
   @Override
   public void process(HttpServletRequest request, String templateId, Map<String, Object> model, Writer out)
@@ -56,10 +42,6 @@ public class OpenSamlVelocityEngine implements SamlTemplateEngine
 
   protected void initializeVelocityEngine(org.apache.velocity.app.VelocityEngine velocityEngine)
   {
-    if (disableVelocityLog)
-    {
-      velocityEngine.setProperty("runtime.log.logsystem.class", NullLogChute.class.getName());
-    }
     velocityEngine.init();
   }
 

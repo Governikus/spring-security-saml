@@ -14,8 +14,8 @@
 package org.springframework.security.saml.saml2.authentication;
 
 import java.time.Clock;
+import java.time.Instant;
 
-import org.joda.time.DateTime;
 
 
 public abstract class AssertionCondition<T extends AssertionCondition<T, E>, E>
@@ -25,7 +25,7 @@ public abstract class AssertionCondition<T extends AssertionCondition<T, E>, E>
 
   private boolean evaluated = false;
 
-  private DateTime evaluationTime = null;
+  private Instant evaluationTime = null;
 
   private E evaluationCriteria = null;
 
@@ -34,7 +34,7 @@ public abstract class AssertionCondition<T extends AssertionCondition<T, E>, E>
     return valid;
   }
 
-  public DateTime getEvaluationTime()
+  public Instant getEvaluationTime()
   {
     return evaluationTime;
   }
@@ -55,7 +55,7 @@ public abstract class AssertionCondition<T extends AssertionCondition<T, E>, E>
     this.valid = internalEvaluate(evaluationCriteria);
     this.evaluated = true;
     this.evaluationCriteria = evaluationCriteria;
-    this.evaluationTime = new DateTime(time.millis());
+    this.evaluationTime = Instant.now(time);
     return valid;
   }
 

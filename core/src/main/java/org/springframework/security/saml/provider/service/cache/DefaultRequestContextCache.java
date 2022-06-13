@@ -17,7 +17,7 @@ import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.lang.Nullable;
 import org.springframework.security.saml.saml2.authentication.AuthenticationRequest;
 
@@ -44,8 +44,7 @@ public class DefaultRequestContextCache implements RequestContextCache
                                              AuthenticationRequest... authenticationRequests)
   {
     RequestContext requestContext = new RequestContext(genRelayStateValue(),
-                                                       Arrays.asList(authenticationRequests)
-                                                             .stream()
+                                                       Arrays.stream(authenticationRequests)
                                                              .map(AuthenticationRequest::getId)
                                                              .toArray(String[]::new));
 

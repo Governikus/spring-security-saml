@@ -15,12 +15,12 @@ package org.springframework.security.saml.saml2.authentication;
 
 import static java.util.stream.Collectors.toList;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
-import org.joda.time.DateTime;
 import org.springframework.security.saml.key.EncryptionKey;
 import org.springframework.security.saml.key.SigningKey;
 import org.springframework.security.saml.saml2.ImplementationHolder;
@@ -44,7 +44,7 @@ public class Assertion extends ImplementationHolder
 
   private String id;
 
-  private DateTime issueInstant;
+  private Instant issueInstant;
 
   private Issuer issuer;
 
@@ -94,12 +94,12 @@ public class Assertion extends ImplementationHolder
     return this;
   }
 
-  public DateTime getIssueInstant()
+  public Instant getIssueInstant()
   {
     return issueInstant;
   }
 
-  public Assertion setIssueInstant(DateTime issueInstant)
+  public Assertion setIssueInstant(Instant issueInstant)
   {
     this.issueInstant = issueInstant;
     return this;

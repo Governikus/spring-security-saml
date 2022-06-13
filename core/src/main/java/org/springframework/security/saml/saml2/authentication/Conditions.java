@@ -13,11 +13,10 @@
 
 package org.springframework.security.saml.saml2.authentication;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-
-import org.joda.time.DateTime;
 
 
 /**
@@ -28,29 +27,29 @@ import org.joda.time.DateTime;
 public class Conditions
 {
 
-  private DateTime notBefore;
+  private Instant notBefore;
 
-  private DateTime notOnOrAfter;
+  private Instant notOnOrAfter;
 
   private List<AssertionCondition<?, ?>> criteria = new LinkedList<>();
 
-  public DateTime getNotBefore()
+  public Instant getNotBefore()
   {
     return notBefore;
   }
 
-  public Conditions setNotBefore(DateTime notBefore)
+  public Conditions setNotBefore(Instant notBefore)
   {
     this.notBefore = notBefore;
     return this;
   }
 
-  public DateTime getNotOnOrAfter()
+  public Instant getNotOnOrAfter()
   {
     return notOnOrAfter;
   }
 
-  public Conditions setNotOnOrAfter(DateTime notOnOrAfter)
+  public Conditions setNotOnOrAfter(Instant notOnOrAfter)
   {
     this.notOnOrAfter = notOnOrAfter;
     return this;

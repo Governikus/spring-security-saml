@@ -24,9 +24,9 @@ import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.springframework.security.saml.SamlMessageStore;
 import org.springframework.security.saml.saml2.authentication.Assertion;
+import org.springframework.util.CollectionUtils;
 
 
 /**
@@ -118,7 +118,7 @@ public class DefaultSessionAssertionStore implements SamlMessageStore<Assertion,
   {
     Collection<Assertion> values = getDataMap(request).values();
     Assertion first = null;
-    if (CollectionUtils.isNotEmpty(values))
+    if (!CollectionUtils.isEmpty(values))
     {
       Optional<Assertion> firstOpt = values.stream().findFirst();
       if (firstOpt.isPresent())

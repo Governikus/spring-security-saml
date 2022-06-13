@@ -26,6 +26,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -34,7 +35,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 
-import org.joda.time.DateTime;
 import org.springframework.security.saml.key.EncryptionKey;
 import org.springframework.security.saml.key.SigningKey;
 import org.springframework.security.saml.provider.config.LocalProviderConfiguration;
@@ -255,8 +255,8 @@ public class SamlTestObjectHelper
   public AuthenticationRequest authenticationRequest(ServiceProviderMetadata sp, IdentityProviderMetadata idp)
   {
 
-    AuthenticationRequest request = new AuthenticationRequest().setId("ARQ" + UUID.randomUUID().toString())
-                                                               .setIssueInstant(new DateTime(time.millis()))
+    AuthenticationRequest request = new AuthenticationRequest().setId("ARQ" + UUID.randomUUID())
+                                                               .setIssueInstant(Instant.now(time))
                                                                .setForceAuth(Boolean.FALSE)
                                                                .setPassive(Boolean.FALSE)
                                                                .setBinding(Binding.POST)
@@ -305,8 +305,8 @@ public class SamlTestObjectHelper
     long now = time.millis();
     return new Assertion().setSigningKey(idp.getSigningKey(), idp.getAlgorithm(), idp.getDigest())
                           .setVersion("2.0")
-                          .setIssueInstant(new DateTime(now))
-                          .setId("A" + UUID.randomUUID().toString())
+                          .setIssueInstant(Instant.now())
+                          .setId("A" + UUID.randomUUID())
                           .setIssuer(idp.getEntityId())
                           .setSubject(new Subject().setPrincipal(new NameIdPrincipal().setValue(principal)
                                                                                       .setFormat(principalFormat)
@@ -325,8 +325,8 @@ public class SamlTestObjectHelper
                                                                                                                                                // DateTime(now
                                                                                                                                                // -
                                                                                                                                                // NOT_BEFORE))
-                                                                                                                                               .setNotOnOrAfter(new DateTime(now
-                                                                                                                                                                             + NOT_AFTER))
+                                                                                                                                               .setNotOnOrAfter(Instant.now()
+                                                                                                                                                                       .plusMillis(NOT_AFTER))
                                                                                                                                                .setRecipient(request != null
                                                                                                                                                  ? request.getAssertionConsumerService()
                                                                                                                                                           .getLocation()
@@ -334,17 +334,16 @@ public class SamlTestObjectHelper
 
 
                           )
-                          .setConditions(new Conditions().setNotBefore(new DateTime(now - NOT_BEFORE))
-                                                         .setNotOnOrAfter(new DateTime(now + NOT_AFTER))
+                          .setConditions(new Conditions().setNotBefore(Instant.now().minusMillis(NOT_BEFORE))
+                                                         .setNotOnOrAfter(Instant.now().plusMillis(NOT_AFTER))
                                                          .addCriteria(new AudienceRestriction().addAudience(sp.getEntityId())
 
                                                          ))
-                          .addAuthenticationStatement(new AuthenticationStatement().setAuthInstant(new DateTime(now))
+                          .addAuthenticationStatement(new AuthenticationStatement().setAuthInstant(Instant.now())
                                                                                    .setSessionIndex("IDX"
-                                                                                                    + UUID.randomUUID()
-                                                                                                          .toString())
-                                                                                   .setSessionNotOnOrAfter(new DateTime(now
-                                                                                                                        + SESSION_NOT_AFTER))
+                                                                                                    + UUID.randomUUID())
+                                                                                   .setSessionNotOnOrAfter(Instant.now()
+                                                                                                                  .plusMillis(SESSION_NOT_AFTER))
 
                           );
 
@@ -356,11 +355,11 @@ public class SamlTestObjectHelper
                            IdentityProviderMetadata local)
   {
     Response result = new Response().setAssertions(asList(assertion))
-                                    .setId("RP" + UUID.randomUUID().toString())
+                                    .setId("RP" + UUID.randomUUID())
                                     .setInResponseTo(authn != null ? authn.getId() : null)
                                     .setIssuer(new Issuer().setValue(local.getEntityId()))
                                     .setSigningKey(local.getSigningKey(), local.getAlgorithm(), local.getDigest())
-                                    .setIssueInstant(new DateTime())
+                                    .setIssueInstant(Instant.now())
                                     .setStatus(new Status().setCode(StatusCode.SUCCESS))
                                     .setVersion("2.0");
     Endpoint acs = authn != null ? authn.getAssertionConsumerService() : null;
@@ -419,12 +418,12 @@ public class SamlTestObjectHelper
   {
 
 
-    LogoutRequest result = new LogoutRequest().setId("LRQ" + UUID.randomUUID().toString())
+    LogoutRequest result = new LogoutRequest().setId("LRQ" + UUID.randomUUID())
                                               .setDestination(getSingleLogout(recipient.getSsoProviders()
                                                                                        .get(0)
                                                                                        .getSingleLogoutService()))
                                               .setIssuer(new Issuer().setValue(local.getEntityId()))
-                                              .setIssueInstant(DateTime.now())
+                                              .setIssueInstant(Instant.now())
                                               .setNameId(principal)
                                               .setSigningKey(local.getSigningKey(),
                                                              local.getAlgorithm(),
@@ -477,13 +476,13 @@ public class SamlTestObjectHelper
                                        Endpoint destination)
   {
 
-    return new LogoutResponse().setId("LRP" + UUID.randomUUID().toString())
+    return new LogoutResponse().setId("LRP" + UUID.randomUUID())
                                .setInResponseTo(request != null ? request.getId() : null)
                                .setDestination(destination != null ? destination.getLocation() : null)
                                .setStatus(new Status().setCode(StatusCode.SUCCESS))
                                .setIssuer(new Issuer().setValue(local.getEntityId()))
                                .setSigningKey(local.getSigningKey(), local.getAlgorithm(), local.getDigest())
-                               .setIssueInstant(new DateTime())
+                               .setIssueInstant(Instant.now())
                                .setVersion("2.0");
   }
 

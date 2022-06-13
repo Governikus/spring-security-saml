@@ -19,13 +19,11 @@ import static org.springframework.util.StringUtils.hasText;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import org.joda.time.DateTime;
-import org.joda.time.Instant;
-import org.joda.time.Interval;
 import org.opensaml.saml.common.SAMLVersion;
 import org.springframework.security.saml.provider.service.cache.RequestContextCache;
 import org.springframework.security.saml.saml2.attribute.Attribute;
@@ -51,7 +49,7 @@ import org.springframework.security.saml.validation.ValidationResult;
 public class DefaultResponseValidator
 {
 
-  private final int responseSkewTimeMillis;
+  private final long responseSkewTimeMillis;
 
   private final long maxAuthenticationAgeMillis;
 
@@ -63,14 +61,14 @@ public class DefaultResponseValidator
 
   public DefaultResponseValidator()
   {
-    responseSkewTimeMillis = (int)TimeUnit.MINUTES.toMillis(2);
+    responseSkewTimeMillis = TimeUnit.MINUTES.toMillis(2);
     maxAuthenticationAgeMillis = TimeUnit.HOURS.toMillis(24);
     allowUnsolicitedResponses = true;
     allowSeveralAssertions = true;
     expectedNameIdPolicy = NameId.TRANSIENT;
   }
 
-  public DefaultResponseValidator(int responseSkewTimeMillis,
+  public DefaultResponseValidator(long responseSkewTimeMillis,
                                   long maxAuthenticationAgeMillis,
                                   boolean allowUnsolicitedResponses,
                                   boolean allowSeveralAssertions,
@@ -83,7 +81,7 @@ public class DefaultResponseValidator
     this.expectedNameIdPolicy = expectedNameIdPolicy;
   }
 
-  protected int getReponseSkewTimeMillis()
+  protected long getReponseSkewTimeMillis()
   {
     return responseSkewTimeMillis;
   }
@@ -132,7 +130,7 @@ public class DefaultResponseValidator
     validateInResponseToValue(result, response.getInResponseTo(), requestContext);
     validateIssuer(result, response.getIssuer(), responder.getEntityId(), false);
 
-    if (!isDateTimeSkewValid(getReponseSkewTimeMillis(), 0, response.getIssueInstant(), referenceTime))
+    if (!isDateTimeSkewValid(getReponseSkewTimeMillis(), response.getIssueInstant(), referenceTime))
     {
       result.addError("Issue time is either too old or in the future.");
     }
@@ -244,7 +242,7 @@ public class DefaultResponseValidator
                                requester.getServiceProvider().isWantAssertionsSigned());
     validateIssuer(result, assertion.getIssuer(), responder.getEntityId(), true);
 
-    if (!isDateTimeSkewValid(responseSkewTimeMillis, 0, assertion.getIssueInstant(), referenceTime))
+    if (!isDateTimeSkewValid(responseSkewTimeMillis, assertion.getIssueInstant(), referenceTime))
     {
       result.addError("Issue time is either too old or in the future.");
     }
@@ -326,7 +324,7 @@ public class DefaultResponseValidator
       return;
     }
 
-    if (confirmationData.getNotOnOrAfter().plusMillis(responseSkewTimeMillis).isBeforeNow())
+    if (confirmationData.getNotOnOrAfter().plusMillis(responseSkewTimeMillis).isBefore(Instant.now()))
     {
       result.addError(format("Invalid NotOnOrAfter date: '%s'", confirmationData.getNotOnOrAfter()));
     }
@@ -365,7 +363,7 @@ public class DefaultResponseValidator
         result.addError("Authentication statement is too old.");
       }
 
-      if (statement.getSessionNotOnOrAfter() != null && statement.getSessionNotOnOrAfter().isBeforeNow())
+      if (statement.getSessionNotOnOrAfter() != null && statement.getSessionNotOnOrAfter().isBefore(Instant.now()))
       {
         result.addError("Authentication session expired on " + statement.getSessionNotOnOrAfter());
       }
@@ -390,13 +388,14 @@ public class DefaultResponseValidator
       return;
     }
 
-    if (conditions.getNotBefore() != null && conditions.getNotBefore().minusMillis(responseSkewTimeMillis).isAfterNow())
+    if (conditions.getNotBefore() != null
+        && conditions.getNotBefore().minusMillis(responseSkewTimeMillis).isAfter(Instant.now()))
     {
       result.addError("Conditions expired (not before): " + conditions.getNotBefore());
     }
 
     if (conditions.getNotOnOrAfter() != null
-        && conditions.getNotOnOrAfter().plusMillis(responseSkewTimeMillis).isBeforeNow())
+        && conditions.getNotOnOrAfter().plusMillis(responseSkewTimeMillis).isBefore(Instant.now()))
     {
       result.addError("Conditions expired (not on or after): " + conditions.getNotOnOrAfter());
     }
@@ -427,15 +426,21 @@ public class DefaultResponseValidator
     }
   }
 
-  protected boolean isDateTimeSkewValid(int skewMillis, long backwardMillis, DateTime time, Instant referenceTime)
+  protected boolean isDateTimeSkewValid(long skewMillis, Instant time, Instant referenceTime)
+  {
+    return isDateTimeSkewValid(skewMillis, 0, time, referenceTime);
+  }
+
+  protected boolean isDateTimeSkewValid(long skewMillis, long backwardMillis, Instant time, Instant referenceTime)
   {
     if (time == null)
     {
       return false;
     }
-    final Interval validTimeInterval = new Interval(referenceTime.minus(skewMillis + backwardMillis),
-                                                    referenceTime.plus(skewMillis));
-    return validTimeInterval.contains(time);
+
+    Instant since = referenceTime.minusMillis(skewMillis + backwardMillis);
+    Instant until = referenceTime.plusMillis(skewMillis);
+    return since.isBefore(time) && until.isAfter(time);
   }
 
   protected void validateIssuer(ValidationResult result, Issuer issuer, String entityId, boolean isIssuerMandatory)

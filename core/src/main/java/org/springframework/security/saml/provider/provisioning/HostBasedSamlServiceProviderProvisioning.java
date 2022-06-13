@@ -13,16 +13,17 @@
 
 package org.springframework.security.saml.provider.provisioning;
 
+import static org.springframework.security.saml.saml2.metadata.Binding.POST;
+import static org.springframework.security.saml.saml2.metadata.Binding.REDIRECT;
 import static org.springframework.util.StringUtils.hasText;
 
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.security.saml.SamlMetadataCache;
 import org.springframework.security.saml.SamlTransformer;
 import org.springframework.security.saml.SamlValidator;
-import org.springframework.security.saml.key.EncryptionKey;
 import org.springframework.security.saml.key.SigningKey;
 import org.springframework.security.saml.provider.config.SamlConfigurationRepository;
 import org.springframework.security.saml.provider.service.AuthenticationRequestEnhancer;
@@ -30,7 +31,10 @@ import org.springframework.security.saml.provider.service.HostedServiceProviderS
 import org.springframework.security.saml.provider.service.config.ExternalIdentityProviderConfiguration;
 import org.springframework.security.saml.provider.service.config.LocalServiceProviderConfiguration;
 import org.springframework.security.saml.saml2.metadata.IdentityProviderMetadata;
+import org.springframework.security.saml.saml2.metadata.NameId;
+import org.springframework.security.saml.saml2.metadata.ServiceProvider;
 import org.springframework.security.saml.saml2.metadata.ServiceProviderMetadata;
+import org.springframework.util.CollectionUtils;
 
 
 public class HostBasedSamlServiceProviderProvisioning extends AbstractHostbasedSamlProviderProvisioning implements
@@ -49,7 +53,6 @@ public class HostBasedSamlServiceProviderProvisioning extends AbstractHostbasedS
     this.authnRequestEnhancer = authnRequestEnhancer;
   }
 
-
   @Override
   public HostedServiceProviderService getHostedProvider()
   {
@@ -61,58 +64,81 @@ public class HostBasedSamlServiceProviderProvisioning extends AbstractHostbasedS
   @Override
   protected HostedServiceProviderService getHostedServiceProvider(LocalServiceProviderConfiguration spConfig)
   {
-    String basePath = spConfig.getBasePath();
-    SigningKey activeSigningKey = spConfig.isSignMetadata() ? spConfig.getSigningKeys().getActive() : null;
-    List<SigningKey> signingKeys = new LinkedList<>();
-    if (spConfig.getSigningKeys() != null)
-    {
-      signingKeys.add(activeSigningKey);
-      signingKeys.addAll(spConfig.getSigningKeys().getStandBy());
-    }
-
-    List<EncryptionKey> encryptionKeys = new LinkedList<>();
-    if (spConfig.getEncryptionKeys() != null)
-    {
-      if (spConfig.getEncryptionKeys().getActive() != null)
-      {
-        encryptionKeys.add(spConfig.getEncryptionKeys().getActive());
-      }
-      encryptionKeys.addAll(spConfig.getEncryptionKeys().getStandBy());
-
-      encryptionKeys.forEach(e -> e.setDataEncryptionMethod(spConfig.getDataEncryptionAlgorithm()));
-    }
-
-    String prefix = hasText(spConfig.getPrefix()) ? spConfig.getPrefix() : "saml/sp/";
-    String aliasPath = getAliasPath(spConfig);
-    ServiceProviderMetadata metadata = serviceProviderMetadata(basePath,
-                                                               activeSigningKey,
-                                                               encryptionKeys,
-                                                               signingKeys,
-                                                               prefix,
-                                                               aliasPath,
-                                                               spConfig.getDefaultSigningAlgorithm(),
-                                                               spConfig.getDefaultDigest());
-    if (!spConfig.getNameIds().isEmpty())
-    {
-      metadata.getServiceProvider().setNameIds(spConfig.getNameIds());
-    }
-
-    if (!spConfig.isSingleLogoutEnabled())
-    {
-      metadata.getServiceProvider().setSingleLogoutService(Collections.emptyList());
-    }
-    if (hasText(spConfig.getEntityId()))
-    {
-      metadata.setEntityId(spConfig.getEntityId());
-    }
-    if (hasText(spConfig.getAlias()))
-    {
-      metadata.setEntityAlias(spConfig.getAlias());
-    }
-    metadata.getServiceProvider().setWantAssertionsSigned(spConfig.isWantAssertionsSigned());
-    metadata.getServiceProvider().setAuthnRequestsSigned(spConfig.isSignRequests());
+    ServiceProviderMetadata metadata = serviceProviderMetadata(spConfig);
 
     return new HostedServiceProviderService(spConfig, metadata, getTransformer(), getValidator(), getCache(),
                                             authnRequestEnhancer);
   }
+
+  protected ServiceProviderMetadata serviceProviderMetadata(LocalServiceProviderConfiguration spConfig)
+  {
+    String baseUrl = spConfig.getBasePath();
+    SigningKey activeSigningKey = spConfig.isSignMetadata() ? spConfig.getSigningKeys().getActive() : null;
+
+    ServiceProviderMetadata metadata = new ServiceProviderMetadata();
+    metadata.setEntityId(hasText(spConfig.getEntityId()) ? spConfig.getEntityId() : baseUrl)
+            .setId("SPM" + UUID.randomUUID())
+            .setSigningKey(activeSigningKey, spConfig.getDefaultSigningAlgorithm(), spConfig.getDefaultDigest())
+            .setProviders(List.of(serviceProvider(spConfig, baseUrl)));
+
+    if (hasText(spConfig.getAlias()))
+    {
+      metadata.setEntityAlias(spConfig.getAlias());
+    }
+
+    return metadata;
+  }
+
+  protected ServiceProvider serviceProvider(LocalServiceProviderConfiguration spConfig, String baseUrl)
+  {
+    String prefix = hasText(spConfig.getPrefix()) ? spConfig.getPrefix() : "saml/sp/";
+    String aliasPath = getAliasPath(spConfig);
+
+    ServiceProvider sp = new ServiceProvider();
+
+    sp.setWantAssertionsSigned(spConfig.isWantAssertionsSigned())
+      .setAuthnRequestsSigned(spConfig.isSignRequests())
+      .setEncryptionKeys(getEncryptionKeys(spConfig.getEncryptionKeys(), spConfig.getDataEncryptionAlgorithm()))
+      .setSigningKeys(getSigningKeys(spConfig.getSigningKeys()));
+
+    if (CollectionUtils.isEmpty(spConfig.getAssertionConsumerServices()))
+    {
+      sp.setAssertionConsumerService(List.of(getEndpoint(baseUrl, prefix + "SSO/alias/" + aliasPath, POST, 0, true),
+                                             getEndpoint(baseUrl,
+                                                         prefix + "SSO/alias/" + aliasPath,
+                                                         REDIRECT,
+                                                         1,
+                                                         false)));
+    }
+    else
+    {
+      sp.setAssertionConsumerService(spConfig.getAssertionConsumerServices());
+    }
+
+    if (spConfig.getNameIds().isEmpty())
+    {
+      sp.setNameIds(List.of(NameId.PERSISTENT, NameId.EMAIL));
+    }
+    else
+    {
+      sp.setNameIds(spConfig.getNameIds());
+    }
+
+    if (spConfig.isSingleLogoutEnabled())
+    {
+      sp.setSingleLogoutService(List.of(getEndpoint(baseUrl, prefix + "logout/alias/" + aliasPath, REDIRECT, 0, true)));
+    }
+    else
+    {
+      sp.setSingleLogoutService(Collections.emptyList());
+    }
+
+    if (!CollectionUtils.isEmpty(spConfig.getManageNameIdServices()))
+    {
+      sp.setManageNameIDService(spConfig.getManageNameIdServices());
+    }
+
+    return sp;
+  }
+
 }

@@ -20,6 +20,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -27,7 +28,6 @@ import java.util.UUID;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.joda.time.DateTime;
 import org.springframework.security.saml.SamlException;
 import org.springframework.security.saml.SamlMetadataCache;
 import org.springframework.security.saml.SamlMetadataException;
@@ -179,25 +179,25 @@ public abstract class AbstractHostedProviderService<C extends LocalProviderConfi
                                                                    null,
                                                                    -1))
                               .setIssuer(new Issuer().setValue(local.getEntityId()))
-                              .setIssueInstant(new DateTime(getClock().millis()))
+                              .setIssueInstant(Instant.now(getClock()))
                               .setNameId(principal)
                               .setSigningKey(local.getSigningKey(), local.getAlgorithm(), local.getDigest());
   }
 
   @Override
-  public LogoutResponse logoutResponse(LogoutRequest request, R recipient)
+  public LogoutResponse logoutResponse(String logoutRequestId, R recipient)
   {
     List<SsoProvider<?>> ssoProviders = recipient.getSsoProviders();
     Endpoint destination = getPreferredEndpoint(ssoProviders.get(0).getSingleLogoutService(), null, -1);
-    return new LogoutResponse().setId("LRP" + UUID.randomUUID().toString())
-                               .setInResponseTo(request != null ? request.getId() : null)
+    return new LogoutResponse().setId("LRP" + UUID.randomUUID())
+                               .setInResponseTo(logoutRequestId)
                                .setDestination(destination != null ? destination.getLocation() : null)
                                .setStatus(new Status().setCode(StatusCode.SUCCESS))
                                .setIssuer(new Issuer().setValue(getMetadata().getEntityId()))
                                .setSigningKey(getMetadata().getSigningKey(),
                                               getMetadata().getAlgorithm(),
                                               getMetadata().getDigest())
-                               .setIssueInstant(new DateTime(getClock().millis()))
+                               .setIssueInstant(Instant.now(getClock()))
                                .setVersion("2.0");
   }
 

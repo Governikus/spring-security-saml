@@ -94,7 +94,7 @@ public class ServiceProviderLogoutHandler extends
 
     IdentityProviderMetadata idp = provider.getRemoteProvider(lr);
 
-    LogoutResponse logoutResponse = provider.logoutResponse(lr, idp);
+    LogoutResponse logoutResponse = provider.logoutResponse(lr.getId(), idp);
     String redirect = createRedirectBindingUrl(request, logoutResponse, logoutResponse.getDestination());
     request.setAttribute(RUN_SUCCESS, SamlLogoutSuccessHandler.LogoutStatus.REDIRECT);
     response.sendRedirect(redirect);

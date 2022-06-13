@@ -28,11 +28,11 @@ import static org.springframework.security.saml.util.XmlTestUtil.assertNodeCount
 import static org.springframework.security.saml.util.XmlTestUtil.assertTextNodeValue;
 import static org.springframework.security.saml.util.XmlTestUtil.getNodes;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 import org.opensaml.saml.saml2.core.NameIDType;
 import org.springframework.security.saml.saml2.metadata.Binding;
@@ -93,7 +93,7 @@ class AuthenticationRequestTests extends MetadataBase
     assertSame(PERSISTENT, data.getNameIdPolicy().getFormat());
 
     assertThat(data.getVersion(), equalTo("2.0"));
-    assertThat(data.getIssueInstant(), notNullValue(DateTime.class));
+    assertThat(data.getIssueInstant(), notNullValue(Instant.class));
     assertThat(data.isForceAuth(), equalTo(FALSE));
     assertThat(data.isPassive(), equalTo(FALSE));
     assertThat(data.getBinding().toString(), equalTo("urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"));
@@ -171,7 +171,7 @@ class AuthenticationRequestTests extends MetadataBase
                data.getAuthenticationContextClassReferences().get(0));
 
     assertThat(data.getVersion(), equalTo("2.0"));
-    assertThat(data.getIssueInstant(), notNullValue(DateTime.class));
+    assertThat(data.getIssueInstant(), notNullValue(Instant.class));
     assertThat(data.isForceAuth(), equalTo(FALSE));
     assertThat(data.isPassive(), equalTo(FALSE));
     assertThat(data.getBinding().toString(), equalTo("urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"));

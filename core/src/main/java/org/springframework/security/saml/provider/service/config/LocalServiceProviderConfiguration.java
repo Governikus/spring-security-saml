@@ -13,7 +13,11 @@
 
 package org.springframework.security.saml.provider.service.config;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.security.saml.provider.config.LocalProviderConfiguration;
+import org.springframework.security.saml.saml2.metadata.Endpoint;
 
 
 public class LocalServiceProviderConfiguration
@@ -23,6 +27,10 @@ public class LocalServiceProviderConfiguration
   private boolean signRequests = false;
 
   private boolean wantAssertionsSigned = false;
+
+  private List<Endpoint> assertionConsumerServices = new ArrayList<>();
+
+  private List<Endpoint> manageNameIdServices = new ArrayList<>();
 
   public LocalServiceProviderConfiguration()
   {
@@ -51,4 +59,25 @@ public class LocalServiceProviderConfiguration
     return this;
   }
 
+  public List<Endpoint> getAssertionConsumerServices()
+  {
+    return assertionConsumerServices;
+  }
+
+  public LocalServiceProviderConfiguration setAssertionConsumerServices(List<Endpoint> assertionConsumerServices)
+  {
+    this.assertionConsumerServices = assertionConsumerServices;
+    return this;
+  }
+
+  public List<Endpoint> getManageNameIdServices()
+  {
+    return manageNameIdServices;
+  }
+
+  public LocalServiceProviderConfiguration setManageNameIdServices(List<Endpoint> manageNameIdServices)
+  {
+    this.manageNameIdServices = manageNameIdServices;
+    return this;
+  }
 }

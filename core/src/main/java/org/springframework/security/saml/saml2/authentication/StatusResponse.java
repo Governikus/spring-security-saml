@@ -12,7 +12,8 @@
  */
 package org.springframework.security.saml.saml2.authentication;
 
-import org.joda.time.DateTime;
+import java.time.Instant;
+
 import org.springframework.security.saml.key.SigningKey;
 import org.springframework.security.saml.saml2.ImplementationHolder;
 import org.springframework.security.saml.saml2.signature.AlgorithmMethod;
@@ -32,7 +33,7 @@ public class StatusResponse<T extends StatusResponse<T>> extends ImplementationH
 
   private String version;
 
-  private DateTime issueInstant;
+  private Instant issueInstant;
 
   private String destination;
 
@@ -89,12 +90,12 @@ public class StatusResponse<T extends StatusResponse<T>> extends ImplementationH
     return _this();
   }
 
-  public DateTime getIssueInstant()
+  public Instant getIssueInstant()
   {
     return issueInstant;
   }
 
-  public T setIssueInstant(DateTime issueInstant)
+  public T setIssueInstant(Instant issueInstant)
   {
     this.issueInstant = issueInstant;
     return _this();

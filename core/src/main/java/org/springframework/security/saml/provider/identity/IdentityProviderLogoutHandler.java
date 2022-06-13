@@ -53,7 +53,11 @@ public class IdentityProviderLogoutHandler extends
 
   private static final Log log = LogFactory.getLog(IdentityProviderLogoutHandler.class);
 
-  private static final String ATTRIBUTE_NAME = IdentityProviderLogoutHandler.class.getName() + ".logout.request";
+  private static final String ATTRIBUTE_REQUEST_ID = IdentityProviderLogoutHandler.class.getName()
+                                                     + ".logout.request.id";
+
+  private static final String ATTRIBUTE_ENTITY_ID = IdentityProviderLogoutHandler.class.getName()
+                                                    + ".logout.request.entity.id";
 
   private final SamlProviderProvisioning<HostedIdentityProviderService, LocalIdentityProviderConfiguration, IdentityProviderMetadata, ServiceProviderMetadata, ExternalServiceProviderConfiguration> provisioning;
 
@@ -96,24 +100,12 @@ public class IdentityProviderLogoutHandler extends
     }
   }
 
-  private LogoutRequest getInitialSpRequest(HttpServletRequest request)
-  {
-    HttpSession session = request.getSession(false);
-    if (session == null)
-    {
-      return null;
-    }
-    else
-    {
-      return (LogoutRequest)session.getAttribute(ATTRIBUTE_NAME);
-    }
-  }
-
   private void setInitialSpRequest(HttpServletRequest request, LogoutRequest lr)
   {
     if (lr != null)
     {
-      request.getSession(true).setAttribute(ATTRIBUTE_NAME, lr);
+      request.getSession().setAttribute(ATTRIBUTE_ENTITY_ID, lr.getIssuer() == null ? null : lr.getIssuer().getValue());
+      request.getSession().setAttribute(ATTRIBUTE_REQUEST_ID, lr.getId());
     }
   }
 
@@ -159,7 +151,7 @@ public class IdentityProviderLogoutHandler extends
     {
       log.debug("No SP sessions found, returning logout response");
       ServiceProviderMetadata sp = provider.getRemoteProvider(logoutRequest);
-      LogoutResponse lr = provider.logoutResponse(logoutRequest, sp);
+      LogoutResponse lr = provider.logoutResponse(logoutRequest.getId(), sp);
       String redirect = createRedirectBindingUrl(request, lr, lr.getDestination());
       request.setAttribute(RUN_SUCCESS, SamlLogoutSuccessHandler.LogoutStatus.REDIRECT);
       response.sendRedirect(redirect);
@@ -186,20 +178,25 @@ public class IdentityProviderLogoutHandler extends
     }
     else
     {
-      LogoutRequest logoutRequest = getInitialSpRequest(request);
-      if (logoutRequest != null)
+      HttpSession session = request.getSession(false);
+      if (session != null)
       {
-        // respond to the request
-        logoutResponse = provider.logoutResponse(logoutRequest, provider.getRemoteProvider(logoutRequest));
-        String redirect = createRedirectBindingUrl(request, logoutResponse, logoutResponse.getDestination());
-        request.setAttribute(RUN_SUCCESS, SamlLogoutSuccessHandler.LogoutStatus.REDIRECT);
-        response.sendRedirect(redirect);
+        String entityId = (String)session.getAttribute(ATTRIBUTE_ENTITY_ID);
+        String requestId = (String)session.getAttribute(ATTRIBUTE_REQUEST_ID);
+
+        if (entityId != null && requestId != null)
+        {
+          // respond to the request
+          logoutResponse = provider.logoutResponse(requestId, provider.getRemoteProvider(entityId));
+          String redirect = createRedirectBindingUrl(request, logoutResponse, logoutResponse.getDestination());
+          request.setAttribute(RUN_SUCCESS, SamlLogoutSuccessHandler.LogoutStatus.REDIRECT);
+          response.sendRedirect(redirect);
+          return;
+        }
       }
-      else
-      {
-        // let the other handlers finish
-        request.setAttribute(RUN_SUCCESS, SamlLogoutSuccessHandler.LogoutStatus.SUCCESS);
-      }
+
+      // let the other handlers finish
+      request.setAttribute(RUN_SUCCESS, SamlLogoutSuccessHandler.LogoutStatus.SUCCESS);
     }
   }
 

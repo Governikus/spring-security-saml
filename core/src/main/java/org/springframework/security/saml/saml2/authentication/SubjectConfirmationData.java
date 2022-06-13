@@ -13,42 +13,41 @@
 
 package org.springframework.security.saml.saml2.authentication;
 
-import org.joda.time.DateTime;
+import java.time.Instant;
 
 
 /**
  * Implementation saml:SubjectConfirmationDataType as defined by
- * https://www.oasis-open.org/committees/download.php/35711/sstc-saml-core-errata-2.0-wd-06-diff.pdf
- * Page 20, Line 810
+ * https://www.oasis-open.org/committees/download.php/35711/sstc-saml-core-errata-2.0-wd-06-diff.pdf Page 20, Line 810
  */
 public class SubjectConfirmationData
 {
 
-  private DateTime notBefore;
+  private Instant notBefore;
 
-  private DateTime notOnOrAfter;
+  private Instant notOnOrAfter;
 
   private String recipient;
 
   private String inResponseTo;
 
-  public DateTime getNotBefore()
+  public Instant getNotBefore()
   {
     return notBefore;
   }
 
-  public SubjectConfirmationData setNotBefore(DateTime notBefore)
+  public SubjectConfirmationData setNotBefore(Instant notBefore)
   {
     this.notBefore = notBefore;
     return this;
   }
 
-  public DateTime getNotOnOrAfter()
+  public Instant getNotOnOrAfter()
   {
     return notOnOrAfter;
   }
 
-  public SubjectConfirmationData setNotOnOrAfter(DateTime notOnOrAfter)
+  public SubjectConfirmationData setNotOnOrAfter(Instant notOnOrAfter)
   {
     this.notOnOrAfter = notOnOrAfter;
     return this;

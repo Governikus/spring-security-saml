@@ -15,13 +15,12 @@ package org.springframework.security.saml.spi;
 import static java.lang.String.format;
 import static org.springframework.util.StringUtils.hasText;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import org.joda.time.Instant;
-import org.joda.time.Interval;
 import org.opensaml.saml.common.SAMLVersion;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.saml.saml2.authentication.AuthenticationContextClassReference;
@@ -43,7 +42,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 public class DefaultAuthnRequestValidator
 {
 
-  private final int responseSkewTimeMillis;
+  private final long responseSkewTimeMillis;
 
   private final NameId expectedNameIdPolicy;
 
@@ -57,7 +56,7 @@ public class DefaultAuthnRequestValidator
 
   public DefaultAuthnRequestValidator()
   {
-    responseSkewTimeMillis = (int)TimeUnit.MINUTES.toMillis(2);
+    responseSkewTimeMillis = TimeUnit.MINUTES.toMillis(2);
     expectedNameIdPolicy = NameId.PERSISTENT;
     expectedForceAuthn = null;
     expectedIsPassive = null;
@@ -65,7 +64,7 @@ public class DefaultAuthnRequestValidator
     allowedAuthnContextClassReferences = null;
   }
 
-  public DefaultAuthnRequestValidator(int responseSkewTimeMillis,
+  public DefaultAuthnRequestValidator(long responseSkewTimeMillis,
                                       NameId nameId,
                                       Boolean forceAuthn,
                                       Boolean isPassive,
@@ -80,7 +79,7 @@ public class DefaultAuthnRequestValidator
     allowedAuthnContextClassReferences = authnContextClassRefs;
   }
 
-  protected int getReponseSkewTimeMillis()
+  protected long getReponseSkewTimeMillis()
   {
     return responseSkewTimeMillis;
   }
@@ -158,7 +157,7 @@ public class DefaultAuthnRequestValidator
     }
 
     if (authnRequest.getIssueInstant() == null
-        || !isDateTimeSkewValid(getReponseSkewTimeMillis(), authnRequest.getIssueInstant().toInstant(), referenceTime))
+        || !isDateTimeSkewValid(getReponseSkewTimeMillis(), authnRequest.getIssueInstant(), referenceTime))
     {
       result.addError("Issue time is either too old or in the future.");
     }
@@ -290,7 +289,7 @@ public class DefaultAuthnRequestValidator
                                           .filter(c -> c.getLocation().equals(assertionConsumerService.getLocation()))
                                           .filter(c -> c.getBinding().equals(assertionConsumerService.getBinding()))
                                           .findFirst();
-      if (!match.isPresent())
+      if (match.isEmpty())
       {
         result.addError("Invalid assertion consumer url value.");
       }
@@ -317,14 +316,16 @@ public class DefaultAuthnRequestValidator
     }
   }
 
-  protected boolean isDateTimeSkewValid(int skewMillis, Instant time, Instant referenceTime)
+  protected boolean isDateTimeSkewValid(long skewMillis, Instant time, Instant referenceTime)
   {
     if (time == null)
     {
       return false;
     }
-    final Interval validTimeInterval = new Interval(referenceTime.minus(skewMillis), referenceTime.plus(skewMillis));
-    return validTimeInterval.contains(time);
+
+    Instant since = referenceTime.minusMillis(skewMillis);
+    Instant until = referenceTime.plusMillis(skewMillis);
+    return since.isBefore(time) && until.isAfter(time);
   }
 
   protected void validateAuthnContextClassReferences(ValidationResult result,

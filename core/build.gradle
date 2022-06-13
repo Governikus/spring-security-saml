@@ -35,10 +35,10 @@ dependencies {
 	implementation(group: "org.opensaml", name: "opensaml-saml-api", version: "$openSamlVersion")
 	implementation(group: "org.opensaml", name: "opensaml-saml-impl", version: "$openSamlVersion")
 
-    implementation group: 'javax.xml.bind', name: 'jaxb-api', version: "$jaxbApiVersion"
+    implementation group: 'jakarta.xml.bind', name: 'jakarta.xml.bind-api', version: "$jaxbApiVersion"
 
 
-	provided "javax.servlet:javax.servlet-api:4.0.0"
+	provided "javax.servlet:javax.servlet-api:4.0.1"
 
 	testImplementation "org.slf4j:slf4j-log4j12:$slf4jVersion"
 	testImplementation "commons-logging:commons-logging:1.2"
@@ -47,7 +47,7 @@ dependencies {
 		exclude group: "commons-logging", module: "commons-logging"
 	}
 
-	testImplementation group: 'org.xmlunit', name: 'xmlunit-core', version: '2.8.2'
+	testImplementation group: 'org.xmlunit', name: 'xmlunit-core', version: '2.9.0'
 	testImplementation group: 'org.hamcrest', name: 'hamcrest-library', version: '2.2'
 	testImplementation group: 'org.mockito', name: 'mockito-core', version: "$mockitoVersion"
     testImplementation group: 'net.bytebuddy', name: 'byte-buddy', version: "$byteBuddyVersion"

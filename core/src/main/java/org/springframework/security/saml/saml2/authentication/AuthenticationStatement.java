@@ -13,32 +13,31 @@
 
 package org.springframework.security.saml.saml2.authentication;
 
-import org.joda.time.DateTime;
+import java.time.Instant;
 
 
 /**
  * Implementation saml:AuthnStatementType as defined by
- * https://www.oasis-open.org/committees/download.php/35711/sstc-saml-core-errata-2.0-wd-06-diff.pdf
- * Page 27, Line 1137
+ * https://www.oasis-open.org/committees/download.php/35711/sstc-saml-core-errata-2.0-wd-06-diff.pdf Page 27, Line 1137
  */
 public class AuthenticationStatement
 {
 
-  private DateTime authInstant;
+  private Instant authInstant;
 
   private String sessionIndex;
 
-  private DateTime sessionNotOnOrAfter;
+  private Instant sessionNotOnOrAfter;
 
   private AuthenticationContext authenticationContext = new AuthenticationContext();
 
 
-  public DateTime getAuthInstant()
+  public Instant getAuthInstant()
   {
     return authInstant;
   }
 
-  public AuthenticationStatement setAuthInstant(DateTime authInstant)
+  public AuthenticationStatement setAuthInstant(Instant authInstant)
   {
     this.authInstant = authInstant;
     return this;
@@ -55,12 +54,12 @@ public class AuthenticationStatement
     return this;
   }
 
-  public DateTime getSessionNotOnOrAfter()
+  public Instant getSessionNotOnOrAfter()
   {
     return sessionNotOnOrAfter;
   }
 
-  public AuthenticationStatement setSessionNotOnOrAfter(DateTime sessionNotOnOrAfter)
+  public AuthenticationStatement setSessionNotOnOrAfter(Instant sessionNotOnOrAfter)
   {
     this.sessionNotOnOrAfter = sessionNotOnOrAfter;
     return this;

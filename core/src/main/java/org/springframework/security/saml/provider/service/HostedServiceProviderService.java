@@ -16,11 +16,11 @@ package org.springframework.security.saml.provider.service;
 import static java.util.Optional.ofNullable;
 
 import java.net.URI;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.joda.time.DateTime;
 import org.springframework.security.saml.SamlMetadataCache;
 import org.springframework.security.saml.SamlProviderNotFoundException;
 import org.springframework.security.saml.SamlTransformer;
@@ -158,10 +158,9 @@ public class HostedServiceProviderService extends
     ServiceProviderMetadata sp = getMetadata();
     AuthenticationRequest request = new AuthenticationRequest()
                                                                // Some service providers will not accept first character
-                                                               // if 0..9
-                                                               // Azure AD IdP for example.
+                                                               // if 0..9, Azure AD IdP for example.
                                                                .setId("ARQ" + UUID.randomUUID().toString().substring(1))
-                                                               .setIssueInstant(new DateTime(getClock().millis()))
+                                                               .setIssueInstant(Instant.now(getClock()))
                                                                .setForceAuth(Boolean.FALSE)
                                                                .setPassive(Boolean.FALSE)
                                                                .setBinding(endpoint.getBinding())

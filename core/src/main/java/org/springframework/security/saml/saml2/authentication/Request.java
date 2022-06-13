@@ -13,9 +13,9 @@
 
 package org.springframework.security.saml.saml2.authentication;
 
+import java.time.Instant;
 import java.util.List;
 
-import org.joda.time.DateTime;
 import org.springframework.security.saml.saml2.ImplementationHolder;
 import org.springframework.security.saml.saml2.metadata.Endpoint;
 import org.springframework.security.saml.saml2.signature.Signature;
@@ -37,7 +37,7 @@ public class Request<T extends Request<T>> extends ImplementationHolder
 
   private String id;
 
-  private DateTime issueInstant;
+  private Instant issueInstant;
 
   private Endpoint destination;
 
@@ -95,12 +95,12 @@ public class Request<T extends Request<T>> extends ImplementationHolder
     return _this();
   }
 
-  public DateTime getIssueInstant()
+  public Instant getIssueInstant()
   {
     return issueInstant;
   }
 
-  public T setIssueInstant(DateTime issueInstant)
+  public T setIssueInstant(Instant issueInstant)
   {
     this.issueInstant = issueInstant;
     return _this();

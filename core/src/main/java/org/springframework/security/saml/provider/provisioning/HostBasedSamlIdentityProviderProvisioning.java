@@ -13,16 +13,17 @@
 
 package org.springframework.security.saml.provider.provisioning;
 
+import static org.springframework.security.saml.saml2.metadata.Binding.POST;
+import static org.springframework.security.saml.saml2.metadata.Binding.REDIRECT;
 import static org.springframework.util.StringUtils.hasText;
 
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.security.saml.SamlMetadataCache;
 import org.springframework.security.saml.SamlTransformer;
 import org.springframework.security.saml.SamlValidator;
-import org.springframework.security.saml.key.EncryptionKey;
 import org.springframework.security.saml.key.SigningKey;
 import org.springframework.security.saml.provider.config.SamlConfigurationRepository;
 import org.springframework.security.saml.provider.identity.AssertionEnhancer;
@@ -30,8 +31,11 @@ import org.springframework.security.saml.provider.identity.HostedIdentityProvide
 import org.springframework.security.saml.provider.identity.ResponseEnhancer;
 import org.springframework.security.saml.provider.identity.config.ExternalServiceProviderConfiguration;
 import org.springframework.security.saml.provider.identity.config.LocalIdentityProviderConfiguration;
+import org.springframework.security.saml.saml2.metadata.IdentityProvider;
 import org.springframework.security.saml.saml2.metadata.IdentityProviderMetadata;
+import org.springframework.security.saml.saml2.metadata.NameId;
 import org.springframework.security.saml.saml2.metadata.ServiceProviderMetadata;
+import org.springframework.util.CollectionUtils;
 
 
 public class HostBasedSamlIdentityProviderProvisioning extends AbstractHostbasedSamlProviderProvisioning implements
@@ -67,63 +71,80 @@ public class HostBasedSamlIdentityProviderProvisioning extends AbstractHostbased
   @Override
   protected HostedIdentityProviderService getHostedIdentityProvider(LocalIdentityProviderConfiguration idpConfig)
   {
-    String basePath = idpConfig.getBasePath();
-    SigningKey activeSigningKey = idpConfig.isSignMetadata() ? idpConfig.getSigningKeys().getActive() : null;
-    List<SigningKey> signingKeys = new LinkedList<>();
-    if (idpConfig.getSigningKeys() != null)
-    {
-      signingKeys.add(activeSigningKey);
-      signingKeys.addAll(idpConfig.getSigningKeys().getStandBy());
-    }
-
-    List<EncryptionKey> encryptionKeys = new LinkedList<>();
-    if (idpConfig.getEncryptionKeys() != null)
-    {
-      if (idpConfig.getEncryptionKeys().getActive() != null)
-      {
-        encryptionKeys.add(idpConfig.getEncryptionKeys().getActive());
-      }
-      encryptionKeys.addAll(idpConfig.getEncryptionKeys().getStandBy());
-
-      encryptionKeys.forEach(e -> e.setDataEncryptionMethod(idpConfig.getDataEncryptionAlgorithm()));
-    }
-
-    String prefix = hasText(idpConfig.getPrefix()) ? idpConfig.getPrefix() : "saml/idp/";
-    String aliasPath = getAliasPath(idpConfig);
-
-    IdentityProviderMetadata metadata = identityProviderMetadata(basePath,
-                                                                 activeSigningKey,
-                                                                 encryptionKeys,
-                                                                 signingKeys,
-                                                                 prefix,
-                                                                 aliasPath,
-                                                                 idpConfig.getDefaultSigningAlgorithm(),
-                                                                 idpConfig.getDefaultDigest());
-
-    if (!idpConfig.getNameIds().isEmpty())
-    {
-      metadata.getIdentityProvider().setNameIds(idpConfig.getNameIds());
-    }
-
-    if (!idpConfig.isSingleLogoutEnabled())
-    {
-      metadata.getIdentityProvider().setSingleLogoutService(Collections.emptyList());
-    }
-    if (hasText(idpConfig.getEntityId()))
-    {
-      metadata.setEntityId(idpConfig.getEntityId());
-    }
-    if (hasText(idpConfig.getAlias()))
-    {
-      metadata.setEntityAlias(idpConfig.getAlias());
-    }
-
-    metadata.getIdentityProvider().setWantAuthnRequestsSigned(idpConfig.isWantRequestsSigned());
+    IdentityProviderMetadata metadata = identityProviderMetadata(idpConfig);
 
     return new HostedIdentityProviderService(idpConfig, metadata, getTransformer(), getValidator(), getCache(),
                                              assertionEnhancer, responseEnhancer);
   }
 
+  protected IdentityProviderMetadata identityProviderMetadata(LocalIdentityProviderConfiguration idpConfig)
+  {
+    String baseUrl = idpConfig.getBasePath();
+    SigningKey activeSigningKey = idpConfig.isSignMetadata() ? idpConfig.getSigningKeys().getActive() : null;
+
+    IdentityProviderMetadata metadata = new IdentityProviderMetadata();
+    metadata.setEntityId(hasText(idpConfig.getEntityId()) ? idpConfig.getEntityId() : baseUrl)
+            .setId("IDPM" + UUID.randomUUID())
+            .setSigningKey(activeSigningKey, idpConfig.getDefaultSigningAlgorithm(), idpConfig.getDefaultDigest())
+            .setProviders(List.of(identityProvider(idpConfig, baseUrl)));
+
+    if (hasText(idpConfig.getAlias()))
+    {
+      metadata.setEntityAlias(idpConfig.getAlias());
+    }
+
+    return metadata;
+  }
+
+  protected IdentityProvider identityProvider(LocalIdentityProviderConfiguration idpConfig, String baseUrl)
+  {
+    IdentityProvider idp = new IdentityProvider();
+    idp.setWantAuthnRequestsSigned(idpConfig.isWantRequestsSigned())
+       .setEncryptionKeys(getEncryptionKeys(idpConfig.getEncryptionKeys(), idpConfig.getDataEncryptionAlgorithm()))
+       .setSigningKeys(getSigningKeys(idpConfig.getSigningKeys()));
+
+    String prefix = hasText(idpConfig.getPrefix()) ? idpConfig.getPrefix() : "saml/idp/";
+    String aliasPath = getAliasPath(idpConfig);
+
+    if (CollectionUtils.isEmpty(idpConfig.getSingleSignOnServices()))
+    {
+      idp.setSingleSignOnService(List.of(getEndpoint(baseUrl, prefix + "SSO/alias/" + aliasPath, POST, 0, true),
+                                         getEndpoint(baseUrl, prefix + "SSO/alias/" + aliasPath, REDIRECT, 1, false)));
+    }
+    else
+    {
+      idp.setSingleSignOnService(idpConfig.getSingleSignOnServices());
+    }
+
+    if (idpConfig.getNameIds().isEmpty())
+    {
+      idp.setNameIds(List.of(NameId.PERSISTENT, NameId.EMAIL));
+    }
+    else
+    {
+      idp.setNameIds(idpConfig.getNameIds());
+    }
+
+    if (idpConfig.isSingleLogoutEnabled())
+    {
+      idp.setSingleLogoutService(List.of(getEndpoint(baseUrl,
+                                                     prefix + "logout/alias/" + aliasPath,
+                                                     REDIRECT,
+                                                     0,
+                                                     true)));
+    }
+    else
+    {
+      idp.setSingleLogoutService(Collections.emptyList());
+    }
+
+    if (!CollectionUtils.isEmpty(idpConfig.getAttributes()))
+    {
+      idp.setAttribute(idpConfig.getAttributes());
+    }
+
+    return idp;
+  }
 
 }
 

@@ -36,12 +36,12 @@ import static org.springframework.security.saml.saml2.metadata.NameId.UNSPECIFIE
 import static org.springframework.security.saml.saml2.metadata.NameId.X509_SUBJECT;
 import static org.springframework.security.saml.spi.ExamplePemKey.IDP_RSA_KEY;
 import static org.springframework.security.saml.spi.ExamplePemKey.RSA_TEST_KEY;
-import static org.springframework.security.saml.util.DateUtils.fromZuluTime;
 import static org.springframework.security.saml.util.X509Utilities.keyCleanup;
 import static org.springframework.security.saml.util.XmlTestUtil.assertNodeAttribute;
 import static org.springframework.security.saml.util.XmlTestUtil.assertNodeCount;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -64,21 +64,21 @@ class MetadataTests extends MetadataBase
 {
 
   private SigningKey keyLoginRunPivotalIo = new SigningKey("test",
-                                                         "MIIDaDCCAlACCQDFsMECzdtetjANBgkqhkiG9w0BAQUFADB2MQswCQYDVQQGEwJVUzETMBEGA1UE\n"
-                                                                       + "CAwKQ2FsaWZvcm5pYTEWMBQGA1UEBwwNU2FuIEZyYW5jaXNjbzEfMB0GA1UECgwWUGl2b3RhbCBT\n"
-                                                                       + "b2Z0d2FyZSwgSW5jLjEZMBcGA1UEAwwQKi5ydW4ucGl2b3RhbC5pbzAeFw0xNTA5MDIyMzIwMDla\n"
-                                                                       + "Fw0xODA5MDEyMzIwMDlaMHYxCzAJBgNVBAYTAlVTMRMwEQYDVQQIDApDYWxpZm9ybmlhMRYwFAYD\n"
-                                                                       + "VQQHDA1TYW4gRnJhbmNpc2NvMR8wHQYDVQQKDBZQaXZvdGFsIFNvZnR3YXJlLCBJbmMuMRkwFwYD\n"
-                                                                       + "VQQDDBAqLnJ1bi5waXZvdGFsLmlvMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAyz8C\n"
-                                                                       + "OS7PJbmziNx1H2tpwSuDSX5ThqasDk/7LZ9FG8s/Zu8IqGQvswoGYx3CWgSaNbVA+Oj9zo7awoao\n"
-                                                                       + "CLCVfU82O3RxH/gNRJQLwBVlgVys5n9UQ2xmTRMOcCTpR5d/zW4jCBgL4q2hjntgDbQNnQKJExgt\n"
-                                                                       + "CGZJOQOFzsW3iG5NPfcAj+FPseVfD96I2OG3uxFPmO2Ov/EE7Hid6lETdNkXXEB2SxIebNgr03Dj\n"
-                                                                       + "l6rFXTTdBXhi9gb+EQSZfbETsOHIDYIMLj0SpJvRcbA+7M4/Vynoxlv+/kICqFjjNATfOrqz7xoU\n"
-                                                                       + "/VlMn1Z3op3cW8GH3iNHvGfIO7sdy2G0gQIDAQABMA0GCSqGSIb3DQEBBQUAA4IBAQCq3PQDcIss\n"
-                                                                       + "cIS1Dq++d1dD4vkGt+8IzYz+ijOLECyXsSm7+b4L+CVinFZ9eF99PLlvvJZ8+zA7NfM1wRpjpdKp\n"
-                                                                       + "0xLTss8yBDHcZkgwvDrH8aTwUtq8gO67wY3JuWBxjTsnoAPbH8zInkHeolCUSobPxAx9XHqbAxfu\n"
-                                                                       + "a8HJjDihi+cJYEb5lPSpvY5ytcPG9JAXAHQ6aalpJjkyB+eaGRYi8s5Ejr3luI3nzJEzfUj5y0fc\n"
-                                                                       + "FTv9CtDt9VfblSuHdRw4uFwat5e1Fb7LtEjATi4cKaG1+zZ80QyuChfC08for83TeQgjq7TA10FA\n"
+                                                           "MIIDaDCCAlACCQDFsMECzdtetjANBgkqhkiG9w0BAQUFADB2MQswCQYDVQQGEwJVUzETMBEGA1UE\n"
+                                                                   + "CAwKQ2FsaWZvcm5pYTEWMBQGA1UEBwwNU2FuIEZyYW5jaXNjbzEfMB0GA1UECgwWUGl2b3RhbCBT\n"
+                                                                   + "b2Z0d2FyZSwgSW5jLjEZMBcGA1UEAwwQKi5ydW4ucGl2b3RhbC5pbzAeFw0xNTA5MDIyMzIwMDla\n"
+                                                                   + "Fw0xODA5MDEyMzIwMDlaMHYxCzAJBgNVBAYTAlVTMRMwEQYDVQQIDApDYWxpZm9ybmlhMRYwFAYD\n"
+                                                                   + "VQQHDA1TYW4gRnJhbmNpc2NvMR8wHQYDVQQKDBZQaXZvdGFsIFNvZnR3YXJlLCBJbmMuMRkwFwYD\n"
+                                                                   + "VQQDDBAqLnJ1bi5waXZvdGFsLmlvMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAyz8C\n"
+                                                                   + "OS7PJbmziNx1H2tpwSuDSX5ThqasDk/7LZ9FG8s/Zu8IqGQvswoGYx3CWgSaNbVA+Oj9zo7awoao\n"
+                                                                   + "CLCVfU82O3RxH/gNRJQLwBVlgVys5n9UQ2xmTRMOcCTpR5d/zW4jCBgL4q2hjntgDbQNnQKJExgt\n"
+                                                                   + "CGZJOQOFzsW3iG5NPfcAj+FPseVfD96I2OG3uxFPmO2Ov/EE7Hid6lETdNkXXEB2SxIebNgr03Dj\n"
+                                                                   + "l6rFXTTdBXhi9gb+EQSZfbETsOHIDYIMLj0SpJvRcbA+7M4/Vynoxlv+/kICqFjjNATfOrqz7xoU\n"
+                                                                   + "/VlMn1Z3op3cW8GH3iNHvGfIO7sdy2G0gQIDAQABMA0GCSqGSIb3DQEBBQUAA4IBAQCq3PQDcIss\n"
+                                                                   + "cIS1Dq++d1dD4vkGt+8IzYz+ijOLECyXsSm7+b4L+CVinFZ9eF99PLlvvJZ8+zA7NfM1wRpjpdKp\n"
+                                                                   + "0xLTss8yBDHcZkgwvDrH8aTwUtq8gO67wY3JuWBxjTsnoAPbH8zInkHeolCUSobPxAx9XHqbAxfu\n"
+                                                                   + "a8HJjDihi+cJYEb5lPSpvY5ytcPG9JAXAHQ6aalpJjkyB+eaGRYi8s5Ejr3luI3nzJEzfUj5y0fc\n"
+                                                                   + "FTv9CtDt9VfblSuHdRw4uFwat5e1Fb7LtEjATi4cKaG1+zZ80QyuChfC08for83TeQgjq7TA10FA\n"
                                                                    + "kKe5nrXyHOORz+ttXkYkp5uEBhpZ");
 
   @Test
@@ -376,7 +376,7 @@ class MetadataTests extends MetadataBase
     assertThat(cacheDuration.getHours(), equalTo(12));
     assertThat(cacheDuration.getMinutes(), equalTo(35));
     assertThat(cacheDuration.getSeconds(), equalTo(30));
-    assertThat(provider.getValidUntil(), equalTo(fromZuluTime("2028-05-02T20:07:06.785Z")));
+    assertThat(provider.getValidUntil(), equalTo(Instant.parse("2028-05-02T20:07:06.785Z")));
 
     Endpoint requestInitiation = provider.getRequestInitiation();
     assertNotNull(requestInitiation);
@@ -530,7 +530,7 @@ class MetadataTests extends MetadataBase
     assertThat(cacheDuration.getHours(), equalTo(12));
     assertThat(cacheDuration.getMinutes(), equalTo(35));
     assertThat(cacheDuration.getSeconds(), equalTo(30));
-    assertThat(provider.getValidUntil(), equalTo(fromZuluTime("2028-05-02T20:07:06.785Z")));
+    assertThat(provider.getValidUntil(), equalTo(Instant.parse("2028-05-02T20:07:06.785Z")));
 
     Endpoint requestInitiation = provider.getRequestInitiation();
     assertNotNull(requestInitiation);

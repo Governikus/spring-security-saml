@@ -12,7 +12,7 @@
  */
 package org.springframework.security.saml.saml2.signature;
 
-import org.springframework.security.saml.key.SimpleKey;
+import org.springframework.security.saml.key.SigningKey;
 
 
 public class Signature
@@ -30,7 +30,7 @@ public class Signature
 
   private boolean validated = false;
 
-  private SimpleKey validatingKey;
+  private SigningKey validatingKey;
 
   public CanonicalizationMethod getCanonicalizationAlgorithm()
   {
@@ -98,12 +98,12 @@ public class Signature
     return this;
   }
 
-  public SimpleKey getValidatingKey()
+  public SigningKey getValidatingKey()
   {
     return validatingKey;
   }
 
-  public Signature setValidatingKey(SimpleKey validatingKey)
+  public Signature setValidatingKey(SigningKey validatingKey)
   {
     this.validatingKey = validatingKey;
     return this;

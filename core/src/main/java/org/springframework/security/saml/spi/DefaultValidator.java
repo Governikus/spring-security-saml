@@ -12,11 +12,11 @@
  */
 package org.springframework.security.saml.spi;
 
+import java.time.Instant;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.joda.time.Instant;
 import org.springframework.security.saml.SamlValidator;
 import org.springframework.security.saml.key.SigningKey;
 import org.springframework.security.saml.provider.HostedProviderService;

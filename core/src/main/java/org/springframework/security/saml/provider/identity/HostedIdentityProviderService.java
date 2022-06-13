@@ -17,12 +17,12 @@ import static java.util.Arrays.asList;
 import static java.util.Optional.ofNullable;
 import static org.springframework.security.saml.saml2.metadata.Binding.POST;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.joda.time.DateTime;
 import org.springframework.security.saml.SamlMetadataCache;
 import org.springframework.security.saml.SamlProviderNotFoundException;
 import org.springframework.security.saml.SamlTransformer;
@@ -148,15 +148,18 @@ public class HostedIdentityProviderService extends
   }
 
   @Override
-  public Assertion assertion(ServiceProviderMetadata sp, AuthenticationRequest request, String principal, NameId principalFormat)
+  public Assertion assertion(ServiceProviderMetadata sp,
+                             AuthenticationRequest request,
+                             String principal,
+                             NameId principalFormat)
   {
-    long now = getClock().millis();
+    Instant now = Instant.now(getClock());
     Assertion assertion = new Assertion().setSigningKey(getMetadata().getSigningKey(),
                                                         getMetadata().getAlgorithm(),
                                                         getMetadata().getDigest())
                                          .setVersion("2.0")
-                                         .setIssueInstant(new DateTime(now))
-                                         .setId("A" + UUID.randomUUID().toString())
+                                         .setIssueInstant(now)
+                                         .setId("A" + UUID.randomUUID())
                                          .setIssuer(getMetadata().getEntityId())
                                          .setSubject(new Subject().setPrincipal(new NameIdPrincipal().setValue(principal)
                                                                                                      .setFormat(principalFormat)
@@ -176,8 +179,7 @@ public class HostedIdentityProviderService extends
                                                                                                                                                               // DateTime(now
                                                                                                                                                               // -
                                                                                                                                                               // NOT_BEFORE))
-                                                                                                                                                              .setNotOnOrAfter(new DateTime(now
-                                                                                                                                                                                            + getConfiguration().getNotOnOrAfter()))
+                                                                                                                                                              .setNotOnOrAfter(now.plusMillis(getConfiguration().getNotOnOrAfter()))
                                                                                                                                                               .setRecipient(request != null
                                                                                                                                                                 ? request.getAssertionConsumerService()
                                                                                                                                                                          .getLocation()
@@ -185,17 +187,13 @@ public class HostedIdentityProviderService extends
                                                                                                                                                                                          .getAssertionConsumerService(),
                                                                                                                                                                                        POST,
                                                                                                                                                                                        -1).getLocation()))))
-                                         .setConditions(new Conditions().setNotBefore(new DateTime(now
-                                                                                                   - getConfiguration().getNotBefore()))
-                                                                        .setNotOnOrAfter(new DateTime(now
-                                                                                                      + getConfiguration().getNotOnOrAfter()))
+                                         .setConditions(new Conditions().setNotBefore(now.minusMillis(getConfiguration().getNotBefore()))
+                                                                        .setNotOnOrAfter(now.plusMillis(getConfiguration().getNotOnOrAfter()))
                                                                         .addCriteria(new AudienceRestriction().addAudience(sp.getEntityId())))
-                                         .addAuthenticationStatement(new AuthenticationStatement().setAuthInstant(new DateTime(now))
+                                         .addAuthenticationStatement(new AuthenticationStatement().setAuthInstant(now)
                                                                                                   .setSessionIndex("IDX"
-                                                                                                                   + UUID.randomUUID()
-                                                                                                                         .toString())
-                                                                                                  .setSessionNotOnOrAfter(new DateTime(now
-                                                                                                                                       + getConfiguration().getSessionNotOnOrAfter()))
+                                                                                                                   + UUID.randomUUID())
+                                                                                                  .setSessionNotOnOrAfter(now.plusMillis(getConfiguration().getSessionNotOnOrAfter()))
 
                                          );
 
@@ -208,9 +206,7 @@ public class HostedIdentityProviderService extends
         DataEncryptionMethod dataEncryptionMethod = encryption.getDataEncryptionMethod() == null
           ? getConfiguration().getDataEncryptionAlgorithm() : encryption.getDataEncryptionMethod();
 
-        assertion.setEncryptionKey(encryption,
-                                   getConfiguration().getKeyEncryptionAlgorithm(),
-                                   dataEncryptionMethod);
+        assertion.setEncryptionKey(encryption, getConfiguration().getKeyEncryptionAlgorithm(), dataEncryptionMethod);
       }
     }
 
@@ -228,13 +224,13 @@ public class HostedIdentityProviderService extends
   public Response response(AuthenticationRequest authn, Assertion assertion, ServiceProviderMetadata recipient)
   {
     Response result = new Response().setAssertions(asList(assertion))
-                                    .setId("RP" + UUID.randomUUID().toString())
+                                    .setId("RP" + UUID.randomUUID())
                                     .setInResponseTo(authn != null ? authn.getId() : null)
                                     .setIssuer(new Issuer().setValue(getMetadata().getEntityId()))
                                     .setSigningKey(getMetadata().getSigningKey(),
                                                    getMetadata().getAlgorithm(),
                                                    getMetadata().getDigest())
-                                    .setIssueInstant(new DateTime(getClock().millis()))
+                                    .setIssueInstant(Instant.now(getClock()))
                                     .setStatus(new Status().setCode(StatusCode.SUCCESS))
                                     .setVersion("2.0");
     Endpoint acs = authn != null ? authn.getAssertionConsumerService() : null;

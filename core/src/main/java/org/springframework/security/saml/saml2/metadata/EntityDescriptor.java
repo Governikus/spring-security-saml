@@ -12,12 +12,12 @@
  */
 package org.springframework.security.saml.saml2.metadata;
 
+import java.time.Instant;
 import java.util.LinkedList;
 import java.util.List;
 
 import javax.xml.datatype.Duration;
 
-import org.joda.time.DateTime;
 import org.springframework.security.saml.key.SigningKey;
 import org.springframework.security.saml.saml2.ImplementationHolder;
 import org.springframework.security.saml.saml2.signature.AlgorithmMethod;
@@ -39,7 +39,7 @@ public class EntityDescriptor<T extends EntityDescriptor<T>> extends Implementat
 
   private String entityAlias;
 
-  private DateTime validUntil;
+  private Instant validUntil;
 
   private Duration cacheDuration;
 
@@ -101,12 +101,12 @@ public class EntityDescriptor<T extends EntityDescriptor<T>> extends Implementat
   /**
    * @return the timestamp of the metadata expiration date. null if this value has not been set.
    */
-  public DateTime getValidUntil()
+  public Instant getValidUntil()
   {
     return validUntil;
   }
 
-  public T setValidUntil(DateTime validUntil)
+  public T setValidUntil(Instant validUntil)
   {
     this.validUntil = validUntil;
     return _this();

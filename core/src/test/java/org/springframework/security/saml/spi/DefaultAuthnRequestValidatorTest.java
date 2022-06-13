@@ -21,14 +21,13 @@ import static org.springframework.security.saml.saml2.authentication.Authenticat
 import static org.springframework.security.saml.saml2.authentication.AuthenticationContextClassReference.AuthenticationContextClassReferenceType.PREVIOUS_SESSION;
 import static org.springframework.security.saml.saml2.authentication.AuthenticationContextClassReference.AuthenticationContextClassReferenceType.UNSPECIFIED;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
-import org.joda.time.DateTime;
-import org.joda.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -56,9 +55,9 @@ class DefaultAuthnRequestValidatorTest
 
   private static final String SERVICE_PROVIDER_ENTITY_ID = "ServiceProviderEntityID";
 
-  private static final int RESPONSE_TIME = (int)TimeUnit.MINUTES.toMillis(2);
+  private static final long RESPONSE_TIME = TimeUnit.MINUTES.toMillis(2);
 
-  final static int CHECK_BOUNDARIES = RESPONSE_TIME + 1;
+  final static long CHECK_BOUNDARIES = RESPONSE_TIME + 1;
 
   ServiceProviderMetadata requester;
 
@@ -215,9 +214,9 @@ class DefaultAuthnRequestValidatorTest
 
   @ParameterizedTest
   @MethodSource({"invalidIssueInstant"})
-  void testInvalidIssueInstant(Instant issueInstant, String expectedErrorMessage, int changeTimeMilliseconds)
+  void testInvalidIssueInstant(Instant issueInstant, String expectedErrorMessage, long changeTimeMilliseconds)
   {
-    authnRequest.setIssueInstant(issueInstant == null ? null : issueInstant.plus(changeTimeMilliseconds).toDateTime());
+    authnRequest.setIssueInstant(issueInstant == null ? null : issueInstant.plusMillis(changeTimeMilliseconds));
 
     ValidationResult validationResult = new DefaultAuthnRequestValidator().validate(authnRequest,
                                                                                     requester,
@@ -354,7 +353,7 @@ class DefaultAuthnRequestValidatorTest
     authnRequest.setDestination(new Endpoint().setLocation("DummyDestination"));
     authnRequest.setForceAuth(true);
     authnRequest.setPassive(false);
-    authnRequest.setIssueInstant(DateTime.now());
+    authnRequest.setIssueInstant(Instant.now());
     authnRequest.setVersion("2.0");
     authnRequest.setIssuer(new Issuer().setValue("ServiceProviderEntityID"));
     authnRequest.setNameIdPolicy(new NameIdPolicy().setFormat(NameId.PERSISTENT).setAllowCreate(true));

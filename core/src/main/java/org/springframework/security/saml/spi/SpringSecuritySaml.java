@@ -71,10 +71,6 @@ public abstract class SpringSecuritySaml<T extends SpringSecuritySaml<T>>
 
   protected abstract void bootstrap();
 
-  public abstract long toMillis(Duration duration);
-
-  public abstract Duration toDuration(long millis);
-
   public abstract String toXml(Saml2Object saml2Object);
 
   public abstract Element toXmlElement(Saml2Object saml2Object);

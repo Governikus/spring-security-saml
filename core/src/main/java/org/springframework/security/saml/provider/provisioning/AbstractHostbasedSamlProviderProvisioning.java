@@ -13,13 +13,11 @@
 
 package org.springframework.security.saml.provider.provisioning;
 
-import static java.util.Arrays.asList;
-import static org.springframework.security.saml.saml2.metadata.Binding.REDIRECT;
 import static org.springframework.util.StringUtils.hasText;
 
 import java.nio.charset.StandardCharsets;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.UUID;
 
 import org.springframework.security.saml.SamlMetadataCache;
 import org.springframework.security.saml.SamlTransformer;
@@ -27,20 +25,16 @@ import org.springframework.security.saml.SamlValidator;
 import org.springframework.security.saml.key.EncryptionKey;
 import org.springframework.security.saml.key.SigningKey;
 import org.springframework.security.saml.provider.config.LocalProviderConfiguration;
+import org.springframework.security.saml.provider.config.RotatingEncryptionKeys;
+import org.springframework.security.saml.provider.config.RotatingSigningKeys;
 import org.springframework.security.saml.provider.config.SamlConfigurationRepository;
 import org.springframework.security.saml.provider.identity.IdentityProviderService;
 import org.springframework.security.saml.provider.identity.config.LocalIdentityProviderConfiguration;
 import org.springframework.security.saml.provider.service.ServiceProviderService;
 import org.springframework.security.saml.provider.service.config.LocalServiceProviderConfiguration;
+import org.springframework.security.saml.saml2.encrypt.DataEncryptionMethod;
 import org.springframework.security.saml.saml2.metadata.Binding;
 import org.springframework.security.saml.saml2.metadata.Endpoint;
-import org.springframework.security.saml.saml2.metadata.IdentityProvider;
-import org.springframework.security.saml.saml2.metadata.IdentityProviderMetadata;
-import org.springframework.security.saml.saml2.metadata.NameId;
-import org.springframework.security.saml.saml2.metadata.ServiceProvider;
-import org.springframework.security.saml.saml2.metadata.ServiceProviderMetadata;
-import org.springframework.security.saml.saml2.signature.AlgorithmMethod;
-import org.springframework.security.saml.saml2.signature.DigestMethod;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.util.UriUtils;
 
@@ -72,57 +66,6 @@ public abstract class AbstractHostbasedSamlProviderProvisioning
     return configuration;
   }
 
-  protected IdentityProviderService getHostedIdentityProvider(LocalIdentityProviderConfiguration idpConfig)
-  {
-    return null;
-  }
-
-  protected String getAliasPath(LocalProviderConfiguration<?, ?> configuration)
-  {
-    return hasText(configuration.getAlias())
-      ? UriUtils.encode(configuration.getAlias(), StandardCharsets.ISO_8859_1.name())
-      : UriUtils.encode(configuration.getEntityId(), StandardCharsets.ISO_8859_1.name());
-  }
-
-  protected IdentityProviderMetadata identityProviderMetadata(String baseUrl,
-                                                              SigningKey activeSigningKey,
-                                                              List<EncryptionKey> encryptionKeys,
-                                                              List<SigningKey> signingKeys,
-                                                              String prefix,
-                                                              String aliasPath,
-                                                              AlgorithmMethod signAlgorithm,
-                                                              DigestMethod signDigest)
-  {
-
-    return new IdentityProviderMetadata().setEntityId(baseUrl)
-                                         .setId("IDPM" + UUID.randomUUID().toString())
-                                         .setSigningKey(activeSigningKey, signAlgorithm, signDigest)
-                                         .setProviders(asList(new IdentityProvider().setWantAuthnRequestsSigned(true)
-                                                                                    .setSingleSignOnService(asList(getEndpoint(baseUrl,
-                                                                                                                               prefix + "SSO/alias/"
-                                                                                                                                        + aliasPath,
-                                                                                                                               Binding.POST,
-                                                                                                                               0,
-                                                                                                                               true),
-                                                                                                                   getEndpoint(baseUrl,
-                                                                                                                               prefix + "SSO/alias/"
-                                                                                                                                        + aliasPath,
-                                                                                                                               REDIRECT,
-                                                                                                                               1,
-                                                                                                                               false)))
-                                                                                    .setNameIds(asList(NameId.PERSISTENT,
-                                                                                                       NameId.EMAIL))
-                                                                                    .setEncryptionKeys(encryptionKeys)
-                                                                                    .setSigningKeys(signingKeys)
-                                                                                    .setSingleLogoutService(asList(getEndpoint(baseUrl,
-                                                                                                                               prefix + "logout/alias/"
-                                                                                                                                        + aliasPath,
-                                                                                                                               REDIRECT,
-                                                                                                                               0,
-                                                                                                                               true)))));
-
-  }
-
   public SamlTransformer getTransformer()
   {
     return transformer;
@@ -138,16 +81,9 @@ public abstract class AbstractHostbasedSamlProviderProvisioning
     return cache;
   }
 
-  protected Endpoint getEndpoint(String baseUrl, String path, Binding binding, int index, boolean isDefault)
+  protected IdentityProviderService getHostedIdentityProvider(LocalIdentityProviderConfiguration idpConfig)
   {
-    UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(baseUrl);
-    builder.pathSegment(path);
-    return getEndpoint(builder.build().toUriString(), binding, index, isDefault);
-  }
-
-  protected Endpoint getEndpoint(String url, Binding binding, int index, boolean isDefault)
-  {
-    return new Endpoint().setIndex(index).setBinding(binding).setLocation(url).setDefault(isDefault).setIndex(index);
+    return null;
   }
 
   protected ServiceProviderService getHostedServiceProvider(LocalServiceProviderConfiguration spConfig)
@@ -155,44 +91,50 @@ public abstract class AbstractHostbasedSamlProviderProvisioning
     return null;
   }
 
-  protected ServiceProviderMetadata serviceProviderMetadata(String baseUrl,
-                                                            SigningKey activeSigningKey,
-                                                            List<EncryptionKey> encryptionKeys,
-                                                            List<SigningKey> signingKeys,
-                                                            String prefix,
-                                                            String aliasPath,
-                                                            AlgorithmMethod signAlgorithm,
-                                                            DigestMethod signDigest)
+  protected String getAliasPath(LocalProviderConfiguration<?, ?> configuration)
   {
-
-    return new ServiceProviderMetadata().setEntityId(baseUrl)
-                                        .setId("SPM" + UUID.randomUUID().toString())
-                                        .setSigningKey(activeSigningKey, signAlgorithm, signDigest)
-                                        .setProviders(asList(new ServiceProvider().setWantAssertionsSigned(true)
-                                                                                  .setAuthnRequestsSigned(activeSigningKey != null)
-                                                                                  .setAssertionConsumerService(asList(getEndpoint(baseUrl,
-                                                                                                                                  prefix + "SSO/alias/"
-                                                                                                                                           + aliasPath,
-                                                                                                                                  Binding.POST,
-                                                                                                                                  0,
-                                                                                                                                  true),
-                                                                                                                      getEndpoint(baseUrl,
-                                                                                                                                  prefix + "SSO/alias/"
-                                                                                                                                           + aliasPath,
-                                                                                                                                  REDIRECT,
-                                                                                                                                  1,
-                                                                                                                                  false)))
-                                                                                  .setNameIds(asList(NameId.PERSISTENT,
-                                                                                                     NameId.EMAIL))
-                                                                                  .setEncryptionKeys(encryptionKeys)
-                                                                                  .setSigningKeys(signingKeys)
-                                                                                  .setSingleLogoutService(asList(getEndpoint(baseUrl,
-                                                                                                                             prefix + "logout/alias/"
-                                                                                                                                      + aliasPath,
-                                                                                                                             REDIRECT,
-                                                                                                                             0,
-                                                                                                                             true)))));
+    return hasText(configuration.getAlias())
+      ? UriUtils.encode(configuration.getAlias(), StandardCharsets.ISO_8859_1.name())
+      : UriUtils.encode(configuration.getEntityId(), StandardCharsets.ISO_8859_1.name());
   }
 
+  protected Endpoint getEndpoint(String baseUrl, String path, Binding binding, int index, boolean isDefault)
+  {
+    String url = UriComponentsBuilder.fromUriString(baseUrl).pathSegment(path).build().toUriString();
+    return getEndpoint(url, binding, index, isDefault);
+  }
+
+  protected Endpoint getEndpoint(String url, Binding binding, int index, boolean isDefault)
+  {
+    return new Endpoint().setIndex(index).setBinding(binding).setLocation(url).setDefault(isDefault);
+  }
+
+  protected List<SigningKey> getSigningKeys(RotatingSigningKeys configSigningKeys)
+  {
+    List<SigningKey> signingKeys = new LinkedList<>();
+    if (configSigningKeys != null)
+    {
+      signingKeys.add(configSigningKeys.getActive());
+      signingKeys.addAll(configSigningKeys.getStandBy());
+    }
+    return signingKeys;
+  }
+
+  protected List<EncryptionKey> getEncryptionKeys(RotatingEncryptionKeys configuredEncryptionKeys,
+                                                  DataEncryptionMethod dataEncryptionAlgorithm)
+  {
+    List<EncryptionKey> encryptionKeys = new LinkedList<>();
+    if (configuredEncryptionKeys != null)
+    {
+      if (configuredEncryptionKeys.getActive() != null)
+      {
+        encryptionKeys.add(configuredEncryptionKeys.getActive());
+      }
+
+      encryptionKeys.addAll(configuredEncryptionKeys.getStandBy());
+      encryptionKeys.forEach(e -> e.setDataEncryptionMethod(dataEncryptionAlgorithm));
+    }
+    return encryptionKeys;
+  }
 
 }
