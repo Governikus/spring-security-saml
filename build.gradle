@@ -25,11 +25,11 @@ buildscript {
 		classpath("org.springframework.build.gradle:propdeps-plugin:0.0.7")
 		classpath("org.springframework.build.gradle:spring-io-plugin:0.0.3.RELEASE")
 		classpath 'org.junit.platform:junit-platform-gradle-plugin:1.1.0'
-		classpath 'io.spring.gradle:spring-build-conventions:0.0.23.RELEASE'
+//		classpath 'io.spring.gradle:spring-build-conventions:0.0.23.RELEASE'
 	}
 }
 
-apply plugin: 'io.spring.convention.root'
+// apply plugin: 'io.spring.convention.root'
 
 def coreProjects = subprojects.findAll { !it.name.contains("sample") }
 
@@ -37,13 +37,13 @@ configure(allprojects) { project ->
 	group = "de.governikus.spring.security.extensions"
 
 	ext.slf4jVersion = "1.7.36"
-	ext.springVersion = "5.3.17"
-	ext.springSecurityVersion = "5.6.2"
-	ext.bcprovVersion = "1.70"
-	ext.bcpkixVersion = "1.70"
-	ext.openSamlVersion = "4.1.1"
+	ext.springVersion = "5.3.32"
+	ext.springSecurityVersion = "5.7.3"
+	ext.bcprovVersion = "1.72"
+	ext.bcpkixVersion = "1.72"
+	ext.openSamlVersion = "4.2.0"
 	ext.gradleScriptDir = "${rootProject.projectDir}/gradle"
-	ext.junitVersion = "5.8.2"
+	ext.junitVersion = "5.9.1"
     ext.jaxbApiVersion = "2.3.3"
     ext.mockitoVersion = "4.4.0"
     ext.byteBuddyVersion = "1.12.8"

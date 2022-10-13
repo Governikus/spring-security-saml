@@ -18,6 +18,7 @@ import static java.util.Optional.ofNullable;
 import static org.springframework.security.saml.saml2.metadata.Binding.POST;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -83,7 +84,9 @@ public class HostedIdentityProviderService extends
   @Override
   protected ServiceProviderMetadata transformMetadata(String data)
   {
-    Metadata<ServiceProviderMetadata> metadata = (Metadata<ServiceProviderMetadata>)getTransformer().fromXml(data, null, null);
+    Metadata<ServiceProviderMetadata> metadata = (Metadata<ServiceProviderMetadata>)getTransformer().fromXml(data,
+                                                                                                             null,
+                                                                                                             null);
     ServiceProviderMetadata result;
     if (metadata instanceof ServiceProviderMetadata)
     {
@@ -243,6 +246,22 @@ public class HostedIdentityProviderService extends
       result.setDestination(acs.getLocation());
     }
     return responseEnhancer.enhance(result);
+  }
+
+  @Override
+  public Response errorResponse(AuthenticationRequest authn, Status status, Endpoint destination)
+  {
+    IdentityProviderMetadata local = getMetadata();
+
+    return new Response().setAssertions(Collections.emptyList())
+                         .setId("RP" + UUID.randomUUID())
+                         .setInResponseTo(authn == null ? null : authn.getId())
+                         .setIssuer(new Issuer().setValue(local.getEntityId()))
+                         .setSigningKey(local.getSigningKey(), local.getAlgorithm(), local.getDigest())
+                         .setIssueInstant(Instant.now())
+                         .setStatus(status)
+                         .setVersion("2.0")
+                         .setDestination(destination.getLocation());
   }
 
 }

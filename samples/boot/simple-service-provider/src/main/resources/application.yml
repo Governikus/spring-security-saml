@@ -155,12 +155,10 @@ spring:
           metadata: http://localhost:8081/sample-idp/saml/idp/metadata
           link-text: Spring Security SAML IDP/8081
           name-id: urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress
-          assertion-consumer-service-index: 0
         - alias: spring-security-saml-dsl-idp
           metadata: http://localhost:8083/dsl-idp/saml/dsl-idp-prefix/metadata
           link-text: Spring Security SAML IDP/8083
           name-id: urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress
-          assertion-consumer-service-index: 0
         - alias: uaa
           metadata: http://localhost:8082/uaa/saml/idp/metadata
           link-text: Cloud Foundry UAA IDP

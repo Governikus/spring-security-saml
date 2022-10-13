@@ -26,8 +26,6 @@ public class ExternalIdentityProviderConfiguration
 
   private NameId nameId;
 
-  private int assertionConsumerServiceIndex;
-
   private URI authenticationRequestBinding;
 
   public NameId getNameId()
@@ -54,17 +52,6 @@ public class ExternalIdentityProviderConfiguration
       throw new SamlException("Unknown NameId type:" + nameId.getClass().getName());
     }
 
-    return this;
-  }
-
-  public int getAssertionConsumerServiceIndex()
-  {
-    return assertionConsumerServiceIndex;
-  }
-
-  public ExternalIdentityProviderConfiguration setAssertionConsumerServiceIndex(int assertionConsumerServiceIndex)
-  {
-    this.assertionConsumerServiceIndex = assertionConsumerServiceIndex;
     return this;
   }
 

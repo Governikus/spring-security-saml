@@ -19,13 +19,14 @@ import org.springframework.security.saml.provider.identity.config.LocalIdentityP
 import org.springframework.security.saml.saml2.authentication.Assertion;
 import org.springframework.security.saml.saml2.authentication.AuthenticationRequest;
 import org.springframework.security.saml.saml2.authentication.Response;
+import org.springframework.security.saml.saml2.authentication.Status;
+import org.springframework.security.saml.saml2.metadata.Endpoint;
 import org.springframework.security.saml.saml2.metadata.IdentityProviderMetadata;
 import org.springframework.security.saml.saml2.metadata.NameId;
 import org.springframework.security.saml.saml2.metadata.ServiceProviderMetadata;
 
 
-public interface IdentityProviderService
-  extends
+public interface IdentityProviderService extends
   HostedProviderService<LocalIdentityProviderConfiguration, IdentityProviderMetadata, ServiceProviderMetadata, ExternalServiceProviderConfiguration>
 {
 
@@ -39,5 +40,7 @@ public interface IdentityProviderService
   Response response(Assertion assertion, ServiceProviderMetadata recipient);
 
   Response response(AuthenticationRequest authn, Assertion assertion, ServiceProviderMetadata recipient);
+
+  Response errorResponse(AuthenticationRequest authn, Status status, Endpoint destination);
 
 }

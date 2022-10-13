@@ -13,9 +13,7 @@
 package org.springframework.security.saml.provider.identity;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.Collections;
-import java.util.UUID;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -29,8 +27,8 @@ import org.springframework.security.saml.provider.identity.config.ExternalServic
 import org.springframework.security.saml.provider.identity.config.LocalIdentityProviderConfiguration;
 import org.springframework.security.saml.provider.provisioning.SamlProviderProvisioning;
 import org.springframework.security.saml.saml2.authentication.AuthenticationRequest;
-import org.springframework.security.saml.saml2.authentication.Issuer;
 import org.springframework.security.saml.saml2.authentication.Response;
+import org.springframework.security.saml.saml2.authentication.Status;
 import org.springframework.security.saml.saml2.metadata.Binding;
 import org.springframework.security.saml.saml2.metadata.Endpoint;
 import org.springframework.security.saml.saml2.metadata.IdentityProviderMetadata;
@@ -76,19 +74,8 @@ public class IdpValidationExceptionFilter extends
                                                         assertionConsumerService.getBinding(),
                                                         assertionConsumerService.getIndex());
 
-        Issuer issuer = new Issuer().setValue(provider.getMetadata().getEntityId());
-
-        Response errorResponse = new Response().setVersion("2.0")
-                                               .setAssertions(Collections.emptyList())
-                                               .setId("RP" + UUID.randomUUID())
-                                               .setInResponseTo(authnRequest.getId())
-                                               .setIssuer(issuer)
-                                               .setSigningKey(provider.getMetadata().getSigningKey(),
-                                                              provider.getMetadata().getAlgorithm(),
-                                                              provider.getMetadata().getDigest())
-                                               .setIssueInstant(Instant.now())
-                                               .setStatus(validationResult.getErrorStatus().setMessage(e.getMessage()))
-                                               .setDestination(acsUrl.getLocation());
+        Status status = validationResult.getErrorStatus().setMessage(e.getMessage());
+        Response errorResponse = getErrorResponse(authnRequest, provider, acsUrl, status);
 
         String relayState = getRelayState(request);
         if (acsUrl.getBinding() == Binding.REDIRECT)
@@ -105,6 +92,14 @@ public class IdpValidationExceptionFilter extends
         }
       }
     }
+  }
+
+  protected Response getErrorResponse(AuthenticationRequest authnRequest,
+                                      HostedIdentityProviderService provider,
+                                      Endpoint acsUrl,
+                                      Status status)
+  {
+    return provider.errorResponse(authnRequest, status, acsUrl);
   }
 
   protected AuthenticationRequest getAuthnRequest(ValidationResult validationResult)
