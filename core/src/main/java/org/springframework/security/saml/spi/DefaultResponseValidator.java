@@ -81,7 +81,7 @@ public class DefaultResponseValidator
     this.expectedNameIdPolicy = expectedNameIdPolicy;
   }
 
-  protected long getReponseSkewTimeMillis()
+  protected long getResponseSkewTimeMillis()
   {
     return responseSkewTimeMillis;
   }
@@ -130,7 +130,7 @@ public class DefaultResponseValidator
     validateInResponseToValue(result, response.getInResponseTo(), requestContext);
     validateIssuer(result, response.getIssuer(), responder.getEntityId(), false);
 
-    if (!isDateTimeSkewValid(getReponseSkewTimeMillis(), response.getIssueInstant(), referenceTime))
+    if (!isDateTimeSkewValid(getResponseSkewTimeMillis(), response.getIssueInstant(), referenceTime))
     {
       result.addError("Issue time is either too old or in the future.");
     }
@@ -355,7 +355,7 @@ public class DefaultResponseValidator
 
     for ( AuthenticationStatement statement : authenticationStatements )
     {
-      if (!isDateTimeSkewValid(getReponseSkewTimeMillis(),
+      if (!isDateTimeSkewValid(getResponseSkewTimeMillis(),
                                getMaxAuthenticationAgeMillis(),
                                statement.getAuthInstant(),
                                referenceTime))

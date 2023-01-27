@@ -36,16 +36,16 @@ def coreProjects = subprojects.findAll { !it.name.contains("sample") }
 configure(allprojects) { project ->
 	group = "de.governikus.spring.security.extensions"
 
-	ext.slf4jVersion = "1.7.36"
-	ext.springVersion = "5.3.32"
-	ext.springSecurityVersion = "5.7.3"
+	ext.slf4jVersion = "2.0.6"
+	ext.springVersion = "5.3.25"
+	ext.springSecurityVersion = "5.8.1"
 	ext.bcprovVersion = "1.72"
 	ext.bcpkixVersion = "1.72"
-	ext.openSamlVersion = "4.2.0"
+	ext.openSamlVersion = "4.3.0"
 	ext.gradleScriptDir = "${rootProject.projectDir}/gradle"
-	ext.junitVersion = "5.9.1"
+	ext.junitVersion = "5.9.2"
     ext.jaxbApiVersion = "2.3.3"
-    ext.mockitoVersion = "4.4.0"
+    ext.mockitoVersion = "5.0.0"
     ext.byteBuddyVersion = "1.12.8"
 
 	apply plugin: "propdeps"
@@ -77,7 +77,7 @@ configure(allprojects) { project ->
 		testCompile(group: "org.junit.jupiter", name: "junit-jupiter-api", version: "$junitVersion")
 		testCompile(group: "org.junit.jupiter", name: "junit-jupiter-engine", version: "$junitVersion")
 		testCompile(group: "org.junit.jupiter", name: "junit-jupiter-params", version: "$junitVersion")
-        testCompile(group: "org.junit.platform", name: "junit-platform-launcher", version: "1.8.2")	
+        testCompile(group: "org.junit.platform", name: "junit-platform-launcher", version: "1.8.2")
 	}
 
 

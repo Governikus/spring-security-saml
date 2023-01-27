@@ -79,7 +79,7 @@ public class DefaultAuthnRequestValidator
     allowedAuthnContextClassReferences = authnContextClassRefs;
   }
 
-  protected long getReponseSkewTimeMillis()
+  protected long getResponseSkewTimeMillis()
   {
     return responseSkewTimeMillis;
   }
@@ -157,7 +157,7 @@ public class DefaultAuthnRequestValidator
     }
 
     if (authnRequest.getIssueInstant() == null
-        || !isDateTimeSkewValid(getReponseSkewTimeMillis(), authnRequest.getIssueInstant(), referenceTime))
+        || !isDateTimeSkewValid(getResponseSkewTimeMillis(), authnRequest.getIssueInstant(), referenceTime))
     {
       result.addError("Issue time is either too old or in the future.");
     }
