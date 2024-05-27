@@ -14,9 +14,9 @@
 package org.springframework.security.saml.provider.config;
 
 import java.time.Clock;
+import java.util.concurrent.TimeUnit;
 
-import javax.servlet.Filter;
-
+import org.apache.hc.core5.util.Timeout;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.saml.SamlMetadataCache;
 import org.springframework.security.saml.SamlTemplateEngine;
@@ -34,6 +34,8 @@ import org.springframework.security.saml.spi.SpringSecuritySaml;
 import org.springframework.security.saml.spi.opensaml.OpenSamlImplementation;
 import org.springframework.security.saml.spi.opensaml.OpenSamlVelocityEngine;
 import org.springframework.web.client.RestOperations;
+
+import jakarta.servlet.Filter;
 
 
 public abstract class AbstractSamlServerBeanConfiguration<T extends HostedProviderService<C, L, R, E>, C extends LocalProviderConfiguration<C, E>, L extends Metadata<L>, R extends Metadata<R>, E extends ExternalProviderConfiguration<E>>
@@ -118,12 +120,14 @@ public abstract class AbstractSamlServerBeanConfiguration<T extends HostedProvid
   @Bean
   public RestOperations samlValidatingNetworkHandler()
   {
-    return new Network(getNetworkHandlerConnectTimeout(), getNetworkHandlerReadTimeout()).get(false);
+    return new Network(Timeout.of(getNetworkHandlerConnectTimeout(), TimeUnit.MILLISECONDS),
+                       Timeout.of(getNetworkHandlerReadTimeout(), TimeUnit.MILLISECONDS)).get(false);
   }
 
   @Bean
   public RestOperations samlNonValidatingNetworkHandler()
   {
-    return new Network(getNetworkHandlerConnectTimeout(), getNetworkHandlerReadTimeout()).get(true);
+    return new Network(Timeout.of(getNetworkHandlerConnectTimeout(), TimeUnit.MILLISECONDS),
+                       Timeout.of(getNetworkHandlerReadTimeout(), TimeUnit.MILLISECONDS)).get(true);
   }
 }

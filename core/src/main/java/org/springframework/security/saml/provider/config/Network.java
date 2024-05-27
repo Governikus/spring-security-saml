@@ -18,13 +18,17 @@ import java.security.NoSuchAlgorithmException;
 
 import javax.net.ssl.SSLContext;
 
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
-import org.apache.http.impl.NoConnectionReuseStrategy;
-import org.apache.http.impl.client.DefaultRedirectStrategy;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.ssl.SSLContextBuilder;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.DefaultRedirectStrategy;
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactoryBuilder;
+import org.apache.hc.client5.http.ssl.TrustSelfSignedStrategy;
+import org.apache.hc.core5.http.ConnectionReuseStrategy;
+import org.apache.hc.core5.ssl.SSLContextBuilder;
+import org.apache.hc.core5.util.Timeout;
 import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.security.saml.SamlKeyException;
@@ -35,11 +39,11 @@ import org.springframework.web.client.RestTemplate;
 class Network
 {
 
-  private final int connectTimeoutMillis;
+  private final Timeout connectTimeoutMillis;
 
-  private final int readTimeoutMillis;
+  private final Timeout readTimeoutMillis;
 
-  Network(int connectTimeoutMillis, int readTimeoutMillis)
+  Network(Timeout connectTimeoutMillis, Timeout readTimeoutMillis)
   {
     this.connectTimeoutMillis = connectTimeoutMillis;
     this.readTimeoutMillis = readTimeoutMillis;
@@ -67,13 +71,14 @@ class Network
                                            .setRedirectStrategy(new DefaultRedirectStrategy());
     if (skipSslValidation)
     {
-      builder.setSSLContext(getNonValidatingSslContext());
+      builder.setConnectionManager(createHttpClientConnectionManager());
     }
-    builder.setConnectionReuseStrategy(NoConnectionReuseStrategy.INSTANCE);
+    ConnectionReuseStrategy noConnectionReuseStrategy = (request, response, context) -> false;
+    builder.setConnectionReuseStrategy(noConnectionReuseStrategy);
     RequestConfig config = RequestConfig.custom()
                                         .setConnectTimeout(connectTimeoutMillis)
                                         .setConnectionRequestTimeout(connectTimeoutMillis)
-                                        .setSocketTimeout(readTimeoutMillis)
+                                        .setResponseTimeout(readTimeoutMillis)
                                         .build();
     builder.setDefaultRequestConfig(config);
     return builder;
@@ -89,5 +94,14 @@ class Network
     {
       throw new SamlKeyException(e);
     }
+  }
+
+  private PoolingHttpClientConnectionManager createHttpClientConnectionManager()
+  {
+    return PoolingHttpClientConnectionManagerBuilder.create()
+                                                    .setSSLSocketFactory(SSLConnectionSocketFactoryBuilder.create()
+                                                                                                          .setSslContext(getNonValidatingSslContext())
+                                                                                                          .build())
+                                                    .build();
   }
 }

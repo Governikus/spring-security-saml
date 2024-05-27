@@ -16,8 +16,10 @@ import static org.springframework.security.saml.util.StringUtils.stripSlashes;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.context.annotation.Bean;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.saml.provider.config.AbstractProviderSecurityConfiguration;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
 
@@ -40,20 +42,18 @@ public abstract class SamlServiceProviderSecurityConfiguration extends AbstractP
     this.configuration = configuration;
   }
 
-  @Override
-  protected void configure(HttpSecurity http) throws Exception
+  @Bean
+  public SecurityFilterChain filterChain(HttpSecurity http) throws Exception
   {
     String prefix = getPrefix();
 
     String filterChainPattern = "/" + stripSlashes(prefix) + "/**";
-    log.info("Configuring SAML SP on pattern:" + filterChainPattern);
-    http.antMatcher(filterChainPattern)
+    http.securityMatcher(filterChainPattern)
         .csrf()
         .disable()
         .authorizeRequests()
-        .antMatchers(filterChainPattern)
+        .requestMatchers(filterChainPattern)
         .permitAll();
-
 
     http.addFilterAfter(getConfiguration().samlConfigurationFilter(), BasicAuthenticationFilter.class)
         .addFilterAfter(getConfiguration().spExceptionHandlerFilter(),
@@ -67,6 +67,7 @@ public abstract class SamlServiceProviderSecurityConfiguration extends AbstractP
                         getConfiguration().spAuthenticationResponseFilter().getClass())
         .addFilterAfter(getConfiguration().spSelectIdentityProviderFilter(),
                         getConfiguration().spSamlLogoutFilter().getClass());
+    return http.build();
   }
 
   public SamlServiceProviderServerBeanConfiguration getConfiguration()

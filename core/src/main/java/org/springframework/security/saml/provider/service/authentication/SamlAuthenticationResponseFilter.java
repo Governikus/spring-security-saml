@@ -15,9 +15,6 @@ package org.springframework.security.saml.provider.service.authentication;
 
 import static org.springframework.util.StringUtils.hasText;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.http.HttpMethod;
@@ -42,6 +39,9 @@ import org.springframework.security.saml.spi.DefaultSamlAuthentication;
 import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
 import org.springframework.security.web.authentication.session.ChangeSessionIdAuthenticationStrategy;
 import org.springframework.security.web.util.matcher.RequestMatcher;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 
 public class SamlAuthenticationResponseFilter extends AbstractAuthenticationProcessingFilter

@@ -20,11 +20,10 @@ import static org.springframework.security.saml.saml2.metadata.NameId.UNSPECIFIE
 import static org.springframework.security.saml.saml2.signature.AlgorithmMethod.RSA_SHA256;
 import static org.springframework.security.saml.saml2.signature.DigestMethod.SHA256;
 
+import jakarta.servlet.Filter;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import javax.servlet.Filter;
 
 import org.springframework.context.ApplicationContext;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;

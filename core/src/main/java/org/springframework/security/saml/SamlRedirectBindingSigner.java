@@ -14,11 +14,11 @@ package org.springframework.security.saml;
 
 import java.util.List;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.springframework.security.saml.key.SigningKey;
 import org.springframework.security.saml.saml2.signature.AlgorithmMethod;
 import org.springframework.security.saml.saml2.signature.SignatureException;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 
 public interface SamlRedirectBindingSigner

@@ -16,8 +16,10 @@ import static org.springframework.security.saml.util.StringUtils.stripSlashes;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.context.annotation.Bean;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.saml.provider.config.AbstractProviderSecurityConfiguration;
+import org.springframework.security.web.SecurityFilterChain;
 
 
 public abstract class SamlIdentityProviderSecurityConfiguration extends AbstractProviderSecurityConfiguration
@@ -39,20 +41,20 @@ public abstract class SamlIdentityProviderSecurityConfiguration extends Abstract
     this.configuration = configuration;
   }
 
-  @Override
-  protected void configure(HttpSecurity http) throws Exception
+  @Bean
+  public SecurityFilterChain filterChain(HttpSecurity http) throws Exception
   {
     String filterChainPattern = "/" + stripSlashes(getPrefix()) + "/**";
     log.info("Configuring SAML IDP on pattern:" + filterChainPattern);
-    http.antMatcher(filterChainPattern)
+    http.securityMatcher(filterChainPattern)
         .csrf()
         .disable()
         .authorizeRequests()
-        .antMatchers("/metadata")
+        .requestMatchers("/metadata")
         .permitAll()
-        .antMatchers("/**")
-        .authenticated()
-        .and();
+        .requestMatchers("/**")
+        .authenticated();
+    return http.build();
   }
 
   public SamlIdentityProviderServerBeanConfiguration getConfiguration()

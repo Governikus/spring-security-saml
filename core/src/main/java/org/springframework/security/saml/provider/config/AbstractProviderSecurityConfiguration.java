@@ -13,10 +13,9 @@
 
 package org.springframework.security.saml.provider.config;
 
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 
 
-public abstract class AbstractProviderSecurityConfiguration extends WebSecurityConfigurerAdapter
+public abstract class AbstractProviderSecurityConfiguration
 {
 
   private final String prefix;

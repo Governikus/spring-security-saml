@@ -15,51 +15,38 @@
  *
  */
 
-buildscript {
-	repositories {
-		maven { url "https://repo.spring.io/plugins-release" }
-		jcenter()
-		gradlePluginPortal()
-	}
-	dependencies {
-		classpath("org.springframework.build.gradle:propdeps-plugin:0.0.7")
-		classpath("org.springframework.build.gradle:spring-io-plugin:0.0.3.RELEASE")
-		classpath 'org.junit.platform:junit-platform-gradle-plugin:1.1.0'
-//		classpath 'io.spring.gradle:spring-build-conventions:0.0.23.RELEASE'
-	}
+plugins {
+    id 'io.spring.dependency-management' version "1.1.4"
 }
-
-// apply plugin: 'io.spring.convention.root'
 
 def coreProjects = subprojects.findAll { !it.name.contains("sample") }
 
 configure(allprojects) { project ->
 	group = "de.governikus.spring.security.extensions"
 
-	ext.slf4jVersion = "2.0.6"
-	ext.springVersion = "5.3.25"
-	ext.springSecurityVersion = "5.8.1"
-	ext.bcprovVersion = "1.72"
-	ext.bcpkixVersion = "1.72"
+	ext.slf4jVersion = "2.0.7"
+	ext.springVersion = "6.0.10"
+	ext.springSecurityVersion = "6.1.1"
+	ext.bcprovVersion = "1.78.1"
+	ext.bcpkixVersion = "1.78.1"
 	ext.openSamlVersion = "4.3.0"
 	ext.gradleScriptDir = "${rootProject.projectDir}/gradle"
-	ext.junitVersion = "5.9.2"
-    ext.jaxbApiVersion = "2.3.3"
+	ext.junitVersion = "5.9.3"
+    ext.jaxbApiVersion = "4.0.2"
     ext.mockitoVersion = "5.0.0"
     ext.byteBuddyVersion = "1.12.8"
+    ext.httpClient = "5.2.1"
 
-	apply plugin: "propdeps"
 	apply plugin: "java"
 	apply from: "${gradleScriptDir}/ide.gradle"
-	apply plugin: 'org.junit.platform.gradle.plugin'
 
 	compileJava {
-		sourceCompatibility=11
-		targetCompatibility=11
+		sourceCompatibility=17
+		targetCompatibility=17
 	}
 	compileTestJava {
-		sourceCompatibility=11
-		targetCompatibility=11
+		sourceCompatibility=17
+		targetCompatibility=17
 	}
 
 	test {
@@ -74,10 +61,10 @@ configure(allprojects) { project ->
 	}
 
 	dependencies {
-		testCompile(group: "org.junit.jupiter", name: "junit-jupiter-api", version: "$junitVersion")
-		testCompile(group: "org.junit.jupiter", name: "junit-jupiter-engine", version: "$junitVersion")
-		testCompile(group: "org.junit.jupiter", name: "junit-jupiter-params", version: "$junitVersion")
-        testCompile(group: "org.junit.platform", name: "junit-platform-launcher", version: "1.8.2")
+        testImplementation (group: "org.junit.jupiter", name: "junit-jupiter-api", version: "$junitVersion")
+        testImplementation (group: "org.junit.jupiter", name: "junit-jupiter-engine", version: "$junitVersion")
+        testImplementation (group: "org.junit.jupiter", name: "junit-jupiter-params", version: "$junitVersion")
+        testImplementation (group: "org.junit.platform", name: "junit-platform-launcher", version: "1.8.2")
 	}
 
 
@@ -90,67 +77,58 @@ configure(subprojects) { subproject ->
 }
 
 configure(coreProjects) { p ->
-	apply plugin: 'spring-io'
+    configurations {
+        testImplementation.extendsFrom compileOnly
+    }
 
-	ext.springIoVersion = project.hasProperty('platformVersion') ? platformVersion : 'Cairo-SR7'
+    jar {
+        manifest {
+            attributes(
+                    "Created-By": "${System.getProperty("java.version")} (${System.getProperty("java.specification.vendor")})",
+                    "Implementation-Title": p.name,
+                    "Implementation-Version": p.version
+            )
+        }
 
-	configurations {
-		springIoTestRuntime {
-			resolutionStrategy.eachDependency { DependencyResolveDetails details ->
-				if (details.requested.name == 'servlet-api') {
-					details.useTarget 'javax.servlet:javax.servlet-api:4.0.0'
-				}
-			}
-		}
-	}
+        from("${rootProject.projectDir}/docs/dist") {
+            include "license.txt"
+            into "META-INF"
+            expand(
+                    copyright: new Date().format("yyyy"),
+                    version: project.version
+            )
+        }
+    }
 
-	dependencies {
-		springIoVersions "io.spring.platform:platform-versions:${springIoVersion}@properties"
-	}
+    javadoc {
+        failOnError = false
+        description = "Generates project-level javadoc for use in -javadoc jar"
+        options {
+            memberLevel = JavadocMemberLevel.PROTECTED
+            author = true
+            header = project.name
+        }
 
-	jar {
-		manifest.attributes["Created-By"] =
-			"${System.getProperty("java.version")} (${System.getProperty("java.specification.vendor")})"
-		manifest.attributes["Implementation-Title"] = p.name
-		manifest.attributes["Implementation-Version"] = p.version
+        logging.captureStandardError LogLevel.INFO
+        logging.captureStandardOutput LogLevel.INFO
+    }
 
-		from("${rootProject.projectDir}/docs/dist") {
-			include "license.txt"
-			into "META-INF"
-			expand(copyright: new Date().format("yyyy"), version: project.version)
-		}
-	}
+    tasks.register('sourcesJar', Jar) {
+        dependsOn classes
+        archiveClassifier = "sources"
+        from sourceSets.main.allJava.srcDirs
+        include "**/*.java", "**/*.aj"
+    }
 
-	javadoc {
-		failOnError = false
-		description = "Generates project-level javadoc for use in -javadoc jar"
+    tasks.register('javadocJar', Jar) {
+        archiveClassifier = "javadoc"
+        from javadoc
+    }
 
-		options.memberLevel = org.gradle.external.javadoc.JavadocMemberLevel.PROTECTED
-		options.author = true
-		options.header = project.name
-		options.links(project.ext.javadocLinks)
-
-		// suppress warnings due to cross-module @see and @link references;
-		// note that global 'api' task does display all warnings.
-		logging.captureStandardError LogLevel.INFO
-		logging.captureStandardOutput LogLevel.INFO // suppress "## warnings" message
-	}
-
-	task sourcesJar(type: Jar, dependsOn:classes) {
-		classifier = "sources"
-		from sourceSets.main.allJava.srcDirs
-		include "**/*.java", "**/*.aj"
-	}
-
-	task javadocJar(type: Jar) {
-		classifier = "javadoc"
-		from javadoc
-	}
-
-	artifacts {
-		archives sourcesJar
-		archives javadocJar
-	}
+    artifacts {
+        archives sourcesJar
+        archives javadocJar
+    }
 }
 
 configure(rootProject) {
@@ -189,9 +167,9 @@ configure(rootProject) {
 
 	task docsZip(type: Zip) {
 		group = "Distribution"
-		baseName = "spring-security-saml"
-		classifier = "docs"
-		description = "Builds -${classifier} archive containing api and reference " +
+        archiveBaseName = "spring-security-saml"
+        archiveClassifier = "docs"
+		description = "Builds -${archiveClassifier} archive containing api and reference " +
 			"for deployment at https://docs.spring.io/spring-security-saml/docs."
 
 		from (api) {
@@ -202,12 +180,12 @@ configure(rootProject) {
 
 	task distZip(type: Zip, dependsOn: [docsZip]) {
 		group = "Distribution"
-		baseName = "spring-security-saml"
-		classifier = "dist"
-		description = "Builds -${classifier} archive, containing all jars and docs, " +
+        archiveBaseName = "spring-security-saml"
+        archiveClassifier = "dist"
+		description = "Builds -${archiveClassifier} archive, containing all jars and docs, " +
 					"suitable for community download page."
 
-		ext.baseDir = "${baseName}-${project.version}"
+		ext.baseDir = "${archiveBaseName}-${project.version}"
 
 		from("docs/dist") {
 			include "readme.txt"
@@ -244,12 +222,12 @@ configure(rootProject) {
 	// Not published by default; only for use when building from source.
 	task depsZip(type: Zip, dependsOn: distZip) { zipTask ->
 		group = "Distribution"
-		baseName = "spring-security-saml"
-		classifier = "dist-with-deps"
-		description = "Builds -${classifier} archive, containing everything " +
-			"in the -${distZip.classifier} archive plus all runtime dependencies."
+        archiveBaseName = "spring-security-saml"
+        archiveClassifier = "dist-with-deps"
+		description = "Builds -${archiveClassifier } archive, containing everything " +
+			"in the -${distZip.archiveClassifier } archive plus all runtime dependencies."
 
-		from zipTree(distZip.archivePath)
+		from zipTree(distZip.archiveFile)
 
 		gradle.taskGraph.whenReady { taskGraph ->
 			if (taskGraph.hasTask(":${zipTask.name}")) {

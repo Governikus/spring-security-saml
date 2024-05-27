@@ -14,7 +14,7 @@ package org.springframework.security.saml.util;
 
 import java.net.URISyntaxException;
 
-import org.apache.http.client.utils.URIBuilder;
+import org.apache.hc.core5.net.URIBuilder;
 import org.springframework.security.saml.SamlException;
 
 

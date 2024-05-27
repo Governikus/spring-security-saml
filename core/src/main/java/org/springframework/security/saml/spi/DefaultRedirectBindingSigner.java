@@ -28,8 +28,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.security.saml.SamlException;
@@ -39,6 +37,8 @@ import org.springframework.security.saml.saml2.signature.AlgorithmMethod;
 import org.springframework.security.saml.saml2.signature.SignatureException;
 import org.springframework.security.saml.util.X509Utilities;
 import org.springframework.web.util.UriUtils;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 
 public class DefaultRedirectBindingSigner implements SamlRedirectBindingSigner
@@ -117,8 +117,8 @@ public class DefaultRedirectBindingSigner implements SamlRedirectBindingSigner
     }
 
     List<SigningKey> signatureVerificationKeys = verificationKeys.stream()
-                                                                .filter(Objects::nonNull)
-                                                                .collect(Collectors.toList());
+                                                                 .filter(Objects::nonNull)
+                                                                 .collect(Collectors.toList());
     if (signatureVerificationKeys.isEmpty())
     {
       LOG.info("No key for validating the signature on a HTTP Redirect-Binding request found.");

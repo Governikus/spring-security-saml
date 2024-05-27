@@ -16,10 +16,10 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.springframework.lang.Nullable;
 import org.springframework.security.saml.saml2.authentication.AuthenticationRequest;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 
 public interface RequestContextCache

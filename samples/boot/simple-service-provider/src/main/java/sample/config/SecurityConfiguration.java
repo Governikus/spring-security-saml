@@ -20,8 +20,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.saml.provider.service.config.SamlServiceProviderSecurityConfiguration;
+import org.springframework.security.web.SecurityFilterChain;
 
 
 @EnableWebSecurity
@@ -42,27 +42,10 @@ public class SecurityConfiguration
     }
 
     @Override
-    protected void configure(HttpSecurity http) throws Exception
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception
     {
-      super.configure(http);
       http.apply(serviceProvider()).configure(appConfig);
-    }
-  }
-
-  @Configuration
-  public static class AppSecurity extends WebSecurityConfigurerAdapter
-  {
-
-    @Override
-    protected void configure(HttpSecurity http) throws Exception
-    {
-      http.antMatcher("/**")
-          .authorizeRequests()
-          .antMatchers("/**")
-          .authenticated()
-          .and()
-          .formLogin()
-          .loginPage("/saml/sp/select");
+      return super.filterChain(http);
     }
   }
 

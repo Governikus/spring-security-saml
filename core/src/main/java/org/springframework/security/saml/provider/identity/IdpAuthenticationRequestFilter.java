@@ -13,8 +13,6 @@
 
 package org.springframework.security.saml.provider.identity;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.springframework.http.HttpMethod;
 import org.springframework.security.saml.SamlMessageStore;
 import org.springframework.security.saml.SamlRequestMatcher;
@@ -25,6 +23,8 @@ import org.springframework.security.saml.saml2.authentication.Assertion;
 import org.springframework.security.saml.saml2.authentication.AuthenticationRequest;
 import org.springframework.security.saml.saml2.metadata.IdentityProviderMetadata;
 import org.springframework.security.saml.saml2.metadata.ServiceProviderMetadata;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 
 public class IdpAuthenticationRequestFilter extends IdpInitiatedLoginFilter

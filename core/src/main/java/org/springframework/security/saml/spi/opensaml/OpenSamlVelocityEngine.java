@@ -18,11 +18,10 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import java.io.Writer;
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.apache.velocity.VelocityContext;
 import org.springframework.security.saml.SamlTemplateEngine;
 
+import jakarta.servlet.http.HttpServletRequest;
 import net.shibboleth.utilities.java.support.velocity.VelocityEngine;
 
 

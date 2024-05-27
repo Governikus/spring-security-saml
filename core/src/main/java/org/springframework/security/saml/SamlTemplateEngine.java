@@ -16,14 +16,13 @@ package org.springframework.security.saml;
 import java.io.Writer;
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 
 /**
- * Saml messages are often delivered using browser redirects.
- * This can be via 302 Location responses or via forms that are delivered
- * to the browser using HTML and Javascript.
- * A SamlTemplateEngine can help process HTML/Javascript templates
+ * Saml messages are often delivered using browser redirects. This can be via 302 Location responses or via forms that
+ * are delivered to the browser using HTML and Javascript. A SamlTemplateEngine can help process HTML/Javascript
+ * templates
  */
 public interface SamlTemplateEngine
 {

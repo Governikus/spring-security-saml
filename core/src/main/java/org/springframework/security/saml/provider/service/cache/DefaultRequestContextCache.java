@@ -15,11 +15,11 @@ package org.springframework.security.saml.provider.service.cache;
 import java.util.Arrays;
 import java.util.UUID;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.lang.Nullable;
 import org.springframework.security.saml.saml2.authentication.AuthenticationRequest;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 
 public class DefaultRequestContextCache implements RequestContextCache

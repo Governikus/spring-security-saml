@@ -18,8 +18,6 @@ import static org.springframework.security.saml.util.StringUtils.appendSlash;
 import static org.springframework.security.saml.util.StringUtils.stripEndingSlases;
 import static org.springframework.security.saml.util.StringUtils.stripSlashes;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.springframework.security.saml.provider.HostedProviderService;
 import org.springframework.security.saml.provider.config.ExternalProviderConfiguration;
 import org.springframework.security.saml.provider.config.LocalProviderConfiguration;
@@ -27,6 +25,8 @@ import org.springframework.security.saml.provider.provisioning.SamlProviderProvi
 import org.springframework.security.saml.saml2.metadata.Metadata;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 
 public class SamlRequestMatcher<T extends HostedProviderService<C, L, R, E>, C extends LocalProviderConfiguration<C, E>, L extends Metadata<L>, R extends Metadata<R>, E extends ExternalProviderConfiguration<E>>

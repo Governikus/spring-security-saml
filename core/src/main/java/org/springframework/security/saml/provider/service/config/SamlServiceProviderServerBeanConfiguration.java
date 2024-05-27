@@ -13,8 +13,7 @@
 
 package org.springframework.security.saml.provider.service.config;
 
-import javax.servlet.Filter;
-
+import jakarta.servlet.Filter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.saml.provider.SamlProviderLogoutFilter;
 import org.springframework.security.saml.provider.SamlServerConfiguration;
